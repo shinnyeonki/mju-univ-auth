@@ -6,10 +6,11 @@
 
 명지대학교의 통합 로그인(SSO) 시스템은 보안을 위해 복잡한 인증 절차를 사용합니다. 이 과정은 단순히 아이디와 비밀번호를 전송하는 것을 넘어, JavaScript 기반의 하이브리드 암호화(RSA+AES), CSRF 토큰, 여러 단계의 리다이렉션 및 자동 폼 제출을 포함합니다. `mju-univ-auth`은 이 모든 과정을 자동화하여 최종적으로 학생 정보를 추출합니다.
 
-본 문서는 다음 두 가지 핵심 프로세스를 중심으로 설명합니다.
+본 문서는 다음 세 가지 핵심 프로세스를 중심으로 설명합니다.
 
 1.  **SSO 통합 로그인 과정**: `sso.py`와 `crypto.py`를 중심으로, 어떻게 서버로부터 암호화에 필요한 정보를 받고, 자격 증명을 안전하게 암호화하여 전송하며, 최종적으로 서비스 세션을 획득하는지 설명합니다.
 2.  **학생카드 정보 조회 과정**: `student_card.py`를 중심으로, 획득한 세션을 사용하여 학생카드 페이지에 접근하고, 2차 비밀번호 인증을 거쳐, 최종적으로 HTML 페이지에서 학생 정보를 파싱하는 과정을 설명합니다.
+3.  **학적변동내역 조회 과정**: `student_changelog.py`를 중심으로, 획득한 세션을 사용하여 학적변동내역 페이지에 접근하고, HTML 페이지에서 정보를 파싱하는 과정을 설명합니다.
 
 ## 2. 모듈 구조
 
@@ -230,7 +231,51 @@ SSO 로그인을 통해 `msi.mju.ac.kr` 도메인의 유효한 세션을 획득�
     -   루프를 돌며 각 항목을 순회하고, 제목에 따라 `StudentInfo` 데이터 클래스의 해당 필드에 값을 저장합니다.
     -   값은 일반 텍스트일 수도 있고, `input` 태그의 `value` 속성에 들어있을 수도 있습니다. 코드는 두 경우를 모두 처리합니다.
     -   학생 사진은 `<img>` 태그의 `src` 속성에 `data:image/jpg;base64,...` 형태로 포함된 Base64 데이터를 직접 추출합니다.
-    -   파싱이 완료되면 모든 정보가 채워진 `StudentInfo` 객체를 반환합니다.
+    -   파싱이 완료되면 모든 정보가 채워진 `StudentCard` 객체를 반환합니다.
+
+<br>
+
+### 3.3. 학적변동내역 정보 조회 과정 (`student_changelog.py`)
+
+학생카드 조회와 마찬가지로, SSO 로그인을 통해 `msi.mju.ac.kr` 도메인의 유효한 세션을 획득한 후 학적변동내역 정보를 가져옵니다. 이 과정은 학생카드 조회와 달리 **2차 비밀번호 인증이 필요하지 않아** 더 간단합니다.
+
+**전체 흐름 요약:**
+
+`GET (MSI Home, Get CSRF)` -> `POST (Request Change Log Page)` -> `Parse Final Page (Extract Change Log Info)`
+
+---
+
+#### **1단계: MSI CSRF 토큰 획득**
+
+-   **Client Action**: `StudentChangeLogFetcher.fetch()` 메서드는 `BaseFetcher`의 `_get_csrf_token()`을 호출하여 MSI 서비스의 메인 페이지에서 CSRF 토큰을 획득합니다. 이 과정은 학생카드 조회 시의 1단계와 동일합니다.
+    -   **Method**: `GET`
+    -   **URL**: `https://msi.mju.ac.kr/servlet/security/MySecurityStart`
+    -   **Purpose**: MSI 서비스의 후속 요청에 필요한 CSRF 토큰을 획득합니다.
+
+---
+
+#### **2단계: 학적변동내역 페이지 접근 요청**
+
+-   **Client Action**: `_access_change_log_page()` 메서드는 '학적변동내역' 메뉴 클릭에 해당하는 요청을 시뮬레이션합니다.
+    -   **Method**: `POST`
+    -   **URL**: `https://msi.mju.ac.kr/servlet/su/sud/Sud00Svl03viewChangeLog`
+    -   **Headers**:
+        -   `X-CSRF-TOKEN`: 1단계에서 획득한 CSRF 토큰
+    -   **Form Data**:
+        -   `pgmid`: `W_SUD020` (학적변동내역 프로그램 ID)
+        -   `_csrf`: CSRF 토큰
+        -   기타 시스템 식별자
+
+-   **Server Response**: 서버는 요청이 유효하면, 별도의 인증 절차 없이 즉시 학적변동내역 정보가 담긴 HTML 페이지를 반환합니다.
+
+---
+
+#### **3단계: 학적변동내역 정보 파싱**
+
+-   **Client Action**: `_parse_info()` 메서드가 응답받은 HTML 페이지를 `BeautifulSoup`을 이용해 파싱합니다.
+    -   학생카드 파싱과 유사하게, `flex-table-item` 클래스를 가진 `div`들을 순회하며 '학번', '성명', '학적상태' 등의 항목명과 값을 추출합니다.
+    -   추출된 정보는 `StudentChangeLog` 데이터 클래스의 해당 필드에 저장됩니다.
+    -   파싱이 완료되면 모든 정보가 채워진 `StudentChangeLog` 객체를 반환합니다.
 
 ## 4. 결론
 

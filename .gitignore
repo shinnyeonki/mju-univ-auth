@@ -11,5 +11,4 @@ wheels/
 .env
 
 
-pypi/
-test_pypi/
+deployment/
