@@ -1,11 +1,11 @@
 """
 사용 예제
 ========
-myiweb 모듈을 사용하여 학생 정보를 조회하는 예제
+mju-univ-auth 모듈을 사용하여 학생 정보를 조회하는 예제
 
 사용법:
 1. .env 파일에 MJU_ID와 MJU_PW 설정
-2. python -m myiweb.examples 실행
+2. python -m mju-univ-auth.examples 실행
 """
 
 import os
@@ -16,9 +16,9 @@ from dotenv import load_dotenv
 # 모듈 경로 추가
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from myiweb import StudentCard, StudentChangeLog, MyIWebError
-from myiweb.sso import MJUSSOLogin
-from myiweb.utils import log_info, log_success, log_error
+from mju-univ-auth import StudentCard, StudentChangeLog, MjuUnivAuthError
+from mju-univ-auth.sso import MJUSSOLogin
+from mju-univ-auth.utils import log_info, log_success, log_error
 
 
 def example_high_level():
@@ -52,7 +52,7 @@ def example_high_level():
         print(json.dumps(change_log.to_dict(), ensure_ascii=False, indent=2))
         print("---------------------------\n")
 
-    except MyIWebError as e:
+    except MjuUnivAuthError as e:
         log_error(f"고수준 API 테스트 실패: {e}")
 
 
@@ -76,7 +76,7 @@ def example_services():
             sso = MJUSSOLogin(user_id, user_pw, verbose=False)
             sso.login(service=service)
             log_success(f"✓ {service} 로그인 성공")
-        except MyIWebError as e:
+        except MjuUnivAuthError as e:
             log_error(f"✗ {service} 로그인 실패: {e}")
 
 

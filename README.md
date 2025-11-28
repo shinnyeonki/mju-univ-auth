@@ -77,33 +77,12 @@ print(f"이수학기: {change_log.completed_semesters}")
 data = change_log.to_dict()
 ```
 
-#### SSO 로그인 (저수준 API)
-
-다양한 명지대학교 서비스에 직접 로그인할 수 있습니다.
-
-```python
-from mju_univ_auth.sso import MJUSSOLogin
-
-# SSO 로그인 객체 생성
-sso = MJUSSOLogin(user_id="학번", user_pw="비밀번호")
-
-# 서비스별 로그인 (session 객체 반환)
-session = sso.login(service='msi')      # My iWeb
-session = sso.login(service='lms')      # e-Class (LMS)
-session = sso.login(service='portal')   # 통합정보시스템
-session = sso.login(service='myicap')   # MyiCAP
-session = sso.login(service='library')  # 도서관
-
-# 반환된 session으로 추가 요청 가능
-response = session.get("https://msi.mju.ac.kr/...")
-```
-
 ### 예외 처리
 
 ```python
 from mju_univ_auth import (
     StudentCard,
-    MyIWebError,
+    MjuUnivAuthError,
     InvalidCredentialsError,
     NetworkError,
     SessionExpiredError
@@ -117,13 +96,13 @@ except NetworkError:
     print("네트워크 연결에 실패했습니다.")
 except SessionExpiredError:
     print("세션이 만료되었습니다.")
-except MyIWebError as e:
+except MjuUnivAuthError as e:
     print(f"오류 발생: {e}")
 ```
 
 ### 환경 변수 사용 (권장)
 
-보안을 위해 환경 변수나 `.env` 파일을 사용하는 것을 권장합니다.
+테스트 시에 보안을 위해 환경 변수나 `.env` 파일을 사용하는 것을 권장합니다.
 
 ```python
 import os

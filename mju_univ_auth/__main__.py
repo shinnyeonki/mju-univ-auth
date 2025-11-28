@@ -1,7 +1,7 @@
 """
 명지대학교 My iWeb 모듈 실행 엔트리포인트 (CLI)
 ==============================================
-`python -m myiweb` 명령으로 실행됩니다.
+`python -m mju-univ-auth` 명령으로 실행됩니다.
 """
 
 import os
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # 단순화된 API 임포트
 from .student_card import StudentCard
 from .student_changelog import StudentChangeLog
-from .exceptions import MyIWebError
+from .exceptions import MjuUnivAuthError
 from .utils import Colors, log_section, log_success, log_error
 
 
@@ -27,7 +27,7 @@ def main():
     banner = (
         f"\n{Colors.BOLD}{Colors.HEADER}\n"
         "╔══════════════════════════════════════════════════════════════════════╗\n"
-        "║           명지대학교 MyiWeb 정보 조회 프로그램 (myiweb)                  ║\n"
+        "║           명지대학교 mju-univ-auth 정보 조회 프로그램 (mju-univ-auth)                  ║\n"
         "║                                                                      ║\n"
         "║  이 프로그램은 MyiWeb에 로그인하여 학생 정보를 조회합니다.                 ║\n"
         "║  - 지원 기능: 학생카드, 학적변동내역                                     ║\n"
@@ -65,7 +65,7 @@ def main():
         print(json.dumps(change_log.to_dict(), ensure_ascii=False, indent=2))
         
         
-    except MyIWebError as e:
+    except MjuUnivAuthError as e:
         log_section("실패")
         log_error(str(e))
 

@@ -16,7 +16,7 @@ MSI(My iWeb) 서비스에 접속하여 학생 정보를 조회하는 모듈
 from .student_card import StudentCard
 from .student_changelog import StudentChangeLog
 from .exceptions import (
-    MyIWebError,
+    MjuUnivAuthError,
     NetworkError,
     PageParsingError,
     InvalidCredentialsError,
@@ -29,7 +29,7 @@ __all__ = [
     'StudentChangeLog',
 
     # 예외 클래스
-    'MyIWebError',
+    'MjuUnivAuthError',
     'NetworkError',
     'PageParsingError',
     'InvalidCredentialsError',

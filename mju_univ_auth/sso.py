@@ -11,7 +11,7 @@ from .utils import (
 )
 from .crypto import generate_session_key, encrypt_with_rsa, encrypt_with_aes
 from .exceptions import (
-    MyIWebError,
+    MjuUnivAuthError,
     NetworkError,
     PageParsingError,
     InvalidCredentialsError
@@ -267,10 +267,10 @@ class MJUSSOLogin:
             InvalidCredentialsError: 로그인 정보가 틀렸을 때
             PageParsingError: 로그인 페이지 파싱에 실패했을 때
             NetworkError: 네트워크 요청에 실패했을 때
-            MyIWebError: 그 외 알 수 없는 에러
+            MjuUnivAuthError: 그 외 알 수 없는 에러
         """
         if service not in self.SERVICES:
-            raise MyIWebError(f'Unknown service: {service}')
+            raise MjuUnivAuthError(f'Unknown service: {service}')
         
         service_info = self.SERVICES[service]
         
@@ -427,7 +427,7 @@ class MJUSSOLogin:
         if self.verbose:
             log_warning("로그인 결과 불확실")
         
-        raise MyIWebError('알 수 없는 오류가 발생했습니다.')
+        raise MjuUnivAuthError('알 수 없는 오류가 발생했습니다.')
     
     def test_session(self, service: str = 'msi') -> bool:
         """세션 유효성 테스트"""

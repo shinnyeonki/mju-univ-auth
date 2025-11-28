@@ -43,7 +43,7 @@ class StudentChangeLog:
         from .sso import MJUSSOLogin
 
         if verbose:
-            log_section("myiweb 통합 실행: 학적변동내역")
+            log_section("mju-univ-auth 통합 실행: 학적변동내역")
 
         sso = MJUSSOLogin(user_id, user_pw, verbose=verbose)
         session = sso.login(service='msi')

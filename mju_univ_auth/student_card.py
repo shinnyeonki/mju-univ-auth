@@ -19,7 +19,7 @@ from .utils import (
     log_warning, log_request, log_response
 )
 from .exceptions import (
-    MyIWebError,
+    MjuUnivAuthError,
     NetworkError,
     PageParsingError,
     InvalidCredentialsError
@@ -81,7 +81,7 @@ class StudentCard:
         from .sso import MJUSSOLogin
 
         if verbose:
-            log_section("myiweb 통합 실행: 학생카드")
+            log_section("mju-univ-auth 통합 실행: 학생카드")
 
         sso = MJUSSOLogin(user_id, user_pw, verbose=verbose)
         session = sso.login(service='msi')
