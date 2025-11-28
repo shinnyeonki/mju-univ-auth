@@ -145,6 +145,19 @@ student_card = StudentCard.fetch(
 
 <!-- TODO: 기술적 상세 내용 추가 예정 -->
 
+
+2025년 11월 25일 부로 명지대학교의 여러 서비스 들이 1개의 로그인 방식(서버측 spring security 예상)으로 통합되었습니다  
+기존 방식의 경우 어떤 서비스는 평문(userId passwrd), 암호화방식 등 여러 방식을 쓰고 있었지만 이제는 모든 로그인은 RSA+... 하이브리드 암호화 구조로 passwrd 는 암호화해서 전송됩니다(https 와는 무관한 중복 암호화)  
+과거 전송 서버측 api가 현재 (2025/11/29) 아직 살아있지만 언제 막힐 지 몰라 해당 라이브러리를 만들었습니다
+```
+curl --location --request POST 'https://sso1.mju.ac.kr/mju/userCheck.do' \
+--header 'id: USERID' \
+--header 'passwd: PASSWORD'
+```
+위 코드는 현재(2025/11/29) 는 사용하지 않지만 동작하는 서버측 api 입니다.
+
+
+
 ---
 
 ## 라이선스
