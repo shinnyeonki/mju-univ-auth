@@ -48,7 +48,7 @@ def main():
     try:
         # 1. 학생카드 정보 조회 (로그인부터 모든 과정 포함)
         log_section("학생카드 정보 조회")
-        student_card = StudentCard.fetch(user_id, user_pw, verbose=False)
+        student_card = StudentCard.fetch(user_id, user_pw, verbose=True)
         log_success("학생카드 정보 조회 완료!")
         
         # JSON 형태로 출력
@@ -57,7 +57,7 @@ def main():
 
         # 2. 학적변동내역 정보 조회
         log_section("학적변동내역 조회")
-        change_log = StudentChangeLog.fetch(user_id, user_pw, verbose=False)
+        change_log = StudentChangeLog.fetch(user_id, user_pw, verbose=True)
         log_success("학적변동내역 조회 완료!")
 
         # JSON 형태로 출력

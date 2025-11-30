@@ -72,16 +72,19 @@ class BaseFetcher(ABC):
         # meta 태그에서 추출
         csrf_match = re.search(r'meta[^>]*_csrf[^>]*content="([^"]+)"', html)
         if csrf_match:
+            log_info("CSRF Token (meta)", "Found in meta tag", 4)
             return csrf_match.group(1)
 
         # X-CSRF-TOKEN 헤더 설정에서 추출 (JavaScript 내)
         csrf_match = re.search(r"X-CSRF-TOKEN[\"']?\s*:\s*[\"']([^\"']+)[\"']", html)
         if csrf_match:
+            log_info("CSRF Token (header)", "Found in X-CSRF-TOKEN header", 4)
             return csrf_match.group(1)
 
         # input hidden 태그에서 추출
         csrf_match = re.search(r'name="_csrf"\s+value="([^"]+)"', html)
         if csrf_match:
+            log_info("CSRF Token (input)", "Found in hidden input field", 4)
             return csrf_match.group(1)
 
         return None

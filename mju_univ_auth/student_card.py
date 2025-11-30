@@ -105,7 +105,7 @@ class StudentCard:
             'email': self.email,
             'current_address': f"({self.current_zip}) {self.current_address1} {self.current_address2}".strip(),
             'registered_address': f"({self.registered_zip}) {self.registered_address1} {self.registered_address2}".strip(),
-            'photo_base64': self.photo_base64[:50] + '...' if self.photo_base64 else '',
+            'photo_base64': self.photo_base64,
             'focus_newsletter': self.focus_newsletter,
         }
 
@@ -140,6 +140,7 @@ class StudentCard:
         if self.photo_base64:
             print(f"\n{Colors.BOLD}[사진]{Colors.END}")
             log_info("사진 데이터", f"Base64 ({len(self.photo_base64)} chars)")
+            print("사진 미리보기", self.photo_base64)
 
 
 class _StudentCardFetcher(BaseFetcher):

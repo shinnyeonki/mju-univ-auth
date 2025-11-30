@@ -86,18 +86,10 @@ class MJUSSOLogin:
         if self.verbose:
             log_step("1-2", "로그인 페이지 파싱")
         
-        # 정규표현식으로 먼저 빠르게 추출 시도
-        public_key_match = re.search(r'id=["\"]public-key["\"][^>]*value=["\"]([^"\"]+)["\"]', html)
-        if not public_key_match:
-            public_key_match = re.search(r'value=["\"]([^"\"]+)["\"][^>]*id=["\"]public-key["\"]', html)
-        
-        csrf_match = re.search(r'id=["\"]c_r_t["\"][^>]*value=["\"]([^"\"]+)["\"]', html)
-        if not csrf_match:
-            csrf_match = re.search(r'value=["\"]([^"\"]+)["\"][^>]*id=["\"]c_r_t["\"]', html)
-        
+        # 정규표현식 추출
+        public_key_match = re.search(r'value=["\"]([^"\"]+)["\"][^>]*id=["\"]public-key["\"]', html)
+        csrf_match = re.search(r'value=["\"]([^"\"]+)["\"][^>]*id=["\"]c_r_t["\"]', html)
         form_action_match = re.search(r'<form[^>]*id=["\"]signin-form["\"][^>]*action=["\"]([^"\"]+)["\"]', html)
-        if not form_action_match:
-            form_action_match = re.search(r'<form[^>]*action=["\"]([^"\"]+)["\"][^>]*id=["\"]signin-form["\"]', html)
         
         # 정규표현식으로 모두 찾은 경우 BeautifulSoup 스킵
         if public_key_match and csrf_match and form_action_match:
@@ -331,7 +323,7 @@ class MJUSSOLogin:
                 log_response(response)
             
             # JavaScript 폼 제출 및 리다이렉트 처리 (최대 3회 - MSI 로그인에 필요한 실제 횟수)
-            for i in range(3):
+            for i in range(2):
                 # JavaScript 폼 자동 제출 처리 (onLoad="doLogin()" 등)
                 form_handled = self._handle_js_form_submit(response, i)
                 if form_handled:
