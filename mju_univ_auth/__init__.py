@@ -3,27 +3,43 @@
 =====================
 MSI(My iWeb) 서비스에 접속하여 학생 정보를 조회하는 모듈
 
+사용법:
+    from mju_univ_auth import MjuUnivAuth
+    
+    auth = MjuUnivAuth(user_id="학번", user_pw="비밀번호")
+    student_card = auth.get_student_card()
+    print(student_card.name_korean)
+
 모듈 구성:
-- sso: SSO 로그인 저수준 로직
-- student_card: 학생카드 조회 서비스
-- student_changelog: 학적변동내역 조회 서비스
-- abc: 추상 기본 클래스
-- crypto: RSA/AES 암호화 유틸리티
+- facade: MjuUnivAuth - 메인 API 클래스
+- domain: StudentCard, StudentChangeLog - 데이터 모델
+- services: SSO 로그인, 정보 조회 서비스
+- infrastructure: HTTP 클라이언트, 파서, 암호화
+- config: 서비스 설정
+- utils: 로깅 유틸리티
 - exceptions: 커스텀 예외 클래스
-- utils: 로깅 및 공통 유틸리티
 """
 
-from .student_card import StudentCard
-from .student_changelog import StudentChangeLog
+# 메인 Facade 클래스
+from .facade import MjuUnivAuth
+
+# 도메인 모델
+from .domain import StudentCard, StudentChangeLog
+
+# 예외 클래스
 from .exceptions import (
     MjuUnivAuthError,
     NetworkError,
     PageParsingError,
     InvalidCredentialsError,
-    SessionExpiredError
+    SessionExpiredError,
+    ServiceNotFoundError,
 )
 
 __all__ = [
+    # 메인 API
+    'MjuUnivAuth',
+    
     # 데이터 클래스
     'StudentCard',
     'StudentChangeLog',
@@ -34,4 +50,7 @@ __all__ = [
     'PageParsingError',
     'InvalidCredentialsError',
     'SessionExpiredError',
+    'ServiceNotFoundError',
 ]
+
+__version__ = '0.4.0'
