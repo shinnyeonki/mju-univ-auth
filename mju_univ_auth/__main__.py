@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from .student_card import StudentCard
 from .student_changelog import StudentChangeLog
 from .exceptions import MjuUnivAuthError
+from .sso import MJUSSOLogin
 from .utils import Colors, log_section, log_success, log_error
 
 
@@ -46,24 +47,35 @@ def main():
         return
     
     try:
-        # 1. 학생카드 정보 조회 (로그인부터 모든 과정 포함)
-        log_section("학생카드 정보 조회")
-        student_card = StudentCard.fetch(user_id, user_pw, verbose=True)
-        log_success("학생카드 정보 조회 완료!")
+        # # 1. 학생카드 정보 조회 (로그인부터 모든 과정 포함)
+        # log_section("학생카드 정보 조회")
+        # student_card = StudentCard.fetch(user_id, user_pw, verbose=True)
+        # log_success("학생카드 정보 조회 완료!")
         
-        # JSON 형태로 출력
-        print(f"\n{Colors.BOLD}[학생카드 JSON]{Colors.END}")
-        print(json.dumps(student_card.to_dict(), ensure_ascii=False, indent=2))
+        # # JSON 형태로 출력
+        # print(f"\n{Colors.BOLD}[학생카드 JSON]{Colors.END}")
+        # print(json.dumps(student_card.to_dict(), ensure_ascii=False, indent=2))
 
-        # 2. 학적변동내역 정보 조회
-        log_section("학적변동내역 조회")
-        change_log = StudentChangeLog.fetch(user_id, user_pw, verbose=True)
-        log_success("학적변동내역 조회 완료!")
+        # # 2. 학적변동내역 정보 조회
+        # log_section("학적변동내역 조회")
+        # change_log = StudentChangeLog.fetch(user_id, user_pw, verbose=True)
+        # log_success("학적변동내역 조회 완료!")
 
-        # JSON 형태로 출력
-        print(f"\n{Colors.BOLD}[학적변동내역 JSON]{Colors.END}")
-        print(json.dumps(change_log.to_dict(), ensure_ascii=False, indent=2))
+        # # JSON 형태로 출력
+        # print(f"\n{Colors.BOLD}[학적변동내역 JSON]{Colors.END}")
+        # print(json.dumps(change_log.to_dict(), ensure_ascii=False, indent=2))
         
+        sso = MJUSSOLogin(user_id, user_pw, verbose=True)
+        session = sso.login(service='lms')
+        
+        sso = MJUSSOLogin(user_id, user_pw, verbose=True)
+        session = sso.login(service='msi')
+        
+        sso = MJUSSOLogin(user_id, user_pw, verbose=True)
+        session = sso.login(service='portal')
+        
+        sso = MJUSSOLogin(user_id, user_pw, verbose=True)
+        session = sso.login(service='myicap')
         
     except MjuUnivAuthError as e:
         log_section("실패")

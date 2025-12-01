@@ -35,12 +35,6 @@ class MJUSSOLogin:
             'success_domain': 'portal.mju.ac.kr',
             'test_url': 'https://portal.mju.ac.kr/portal/main.do'
         },
-        'library': {
-            'name': 'Library (도서관)',
-            'url': 'https://sso.mju.ac.kr/sso/auth?response_type=code&client_id=library&state=state&redirect_uri=https://lib.mju.ac.kr/sso/login',
-            'success_domain': 'lib.mju.ac.kr',
-            'test_url': 'https://lib.mju.ac.kr/main'
-        },
         'msi': {
             'name': 'MSI (My iWeb)',
             'url': 'https://sso.mju.ac.kr/sso/auth?client_id=msi&response_type=code&state=1764322070097&tkn_type=normal&redirect_uri=https%3A%2F%2Fmsi.mju.ac.kr%2Findex_Myiweb.jsp',
