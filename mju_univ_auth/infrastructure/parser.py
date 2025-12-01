@@ -172,6 +172,7 @@ class HTMLParser:
         """로그아웃 버튼 존재 여부 확인"""
         return '로그아웃' in html or 'logout' in html.lower()
     
+    #Modification : 학생카드나 학적 변동 내역의 경우 세부적이 파싱이므로 분리해서 studentCardService 에서 처리하는 것이 맞지 않을까?
     @classmethod
     def parse_student_card_fields(cls, html: str) -> Dict[str, str]:
         """학생카드 HTML에서 필드 추출"""
