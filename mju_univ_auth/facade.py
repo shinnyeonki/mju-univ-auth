@@ -1,40 +1,49 @@
 """
 MjuUnivAuth Facade
 ==================
-사용자 친화적 API를 제공하는 메인 클래스입니다.
+사용자 친화적 고수준 API를 제공하는 메인 클래스입니다.
 """
 
 from typing import Optional
+import requests
 
-from .infrastructure.http_client import HTTPClient
-from .services.sso_service import SSOService
-from .services.student_card_service import StudentCardService
-from .services.student_changelog_service import StudentChangeLogService
+from .Authenticator import Authenticator
+from .student_card_fetcher import StudentCardFetcher
+from .student_change_log_fetcher import StudentChangeLogFetcher
 from .domain.student_card import StudentCard
 from .domain.student_changelog import StudentChangeLog
+from .results import MjuUnivAuthResult, ErrorCode
 from .utils import Logger, get_logger
 
 
 class MjuUnivAuth:
     """
-    명지대학교 인증 및 정보 조회를 위한 메인 클래스
+    명지대학교 통합 인증/정보 조회 Facade
     
+    - 복잡한 내부 로직(Session 관리, Fetcher 인스턴스화 등)을 숨김
+    - 메서드 체이닝 지원
+
     사용 예시:
     ```python
-    from mju_univ_auth import MjuUnivAuth
-    
+    from mju_univ_auth import MjuUnivAuth, ErrorCode
+
+    # 방법 1: 체이닝으로 로그인 후 조회
     auth = MjuUnivAuth(user_id="학번", user_pw="비밀번호")
+    result = auth.login("msi").get_student_card()
     
-    # 학생카드 정보 조회
-    student_card = auth.get_student_card()
-    print(student_card.name_korean)
+    # 방법 2: 세션만 받기
+    auth = MjuUnivAuth(user_id="학번", user_pw="비밀번호")
+    login_result = auth.login("lms").get_session()
+    if login_result.success:
+        session = login_result.data  # requests.Session 객체
     
-    # 학적변동내역 조회
-    changelog = auth.get_student_changelog()
-    print(changelog.status)
+    # 방법 3: 바로 조회 (내부적으로 자동 로그인)
+    card_result = auth.get_student_card()
+    if card_result.success:
+        print(card_result.data.name_korean)
     ```
     """
-    
+
     def __init__(
         self,
         user_id: str,
@@ -47,134 +56,136 @@ class MjuUnivAuth:
             user_pw: 비밀번호
             verbose: 상세 로그 출력 여부
         """
-        self.user_id = user_id
-        self.user_pw = user_pw
-        self.verbose = verbose
-        
+        self._user_id = user_id
+        self._user_pw = user_pw
+        self._verbose = verbose
         self._logger: Logger = get_logger(verbose)
-        self._http_client: Optional[HTTPClient] = None
-        self._logged_in_service: Optional[str] = None
-    
-    def _ensure_login(self, service: str = 'msi') -> HTTPClient:
-        """필요 시 로그인 수행"""
-        # 이미 해당 서비스에 로그인된 경우 기존 클라이언트 재사용
-        if self._http_client and self._logged_in_service == service:
-            return self._http_client
         
-        # 새로운 로그인 수행
-        sso = SSOService(
-            user_id=self.user_id,
-            user_pw=self.user_pw,
-            http_client=HTTPClient(),  # 새 HTTP 클라이언트
-            logger=self._logger,
-        )
-        
-        self._http_client = sso.login(service=service)
-        self._logged_in_service = service
-        
-        return self._http_client
-    
-    def get_student_card(self, print_summary: bool = False) -> StudentCard:
-        """
-        학생카드 정보를 조회합니다.
-        
-        Args:
-            print_summary: 조회 결과 요약 출력 여부
-        
-        Returns:
-            StudentCard: 학생카드 정보
-        
-        Raises:
-            InvalidCredentialsError: 로그인 실패
-            NetworkError: 네트워크 오류
-            PageParsingError: 페이지 파싱 실패
-        """
-        if self.verbose:
-            self._logger.section("mju-univ-auth: 학생카드 조회")
-        
-        http_client = self._ensure_login(service='msi')
-        
-        service = StudentCardService(
-            http_client=http_client,
-            user_pw=self.user_pw,
-            logger=self._logger,
-        )
-        
-        student_card = service.fetch()
-        
-        if print_summary:
-            student_card.print_summary()
-        
-        return student_card
-    
-    def get_student_changelog(self, print_summary: bool = False) -> StudentChangeLog:
-        """
-        학적변동내역을 조회합니다.
-        
-        Args:
-            print_summary: 조회 결과 요약 출력 여부
-        
-        Returns:
-            StudentChangeLog: 학적변동내역 정보
-        
-        Raises:
-            InvalidCredentialsError: 로그인 실패
-            NetworkError: 네트워크 오류
-            PageParsingError: 페이지 파싱 실패
-        """
-        if self.verbose:
-            self._logger.section("mju-univ-auth: 학적변동내역 조회")
-        
-        http_client = self._ensure_login(service='msi')
-        
-        service = StudentChangeLogService(
-            http_client=http_client,
-            logger=self._logger,
-        )
-        
-        changelog = service.fetch()
-        
-        if print_summary:
-            changelog.print_summary()
-        
-        return changelog
-    
+        self._session: Optional[requests.Session] = None
+        self._login_result: Optional[MjuUnivAuthResult] = None
+
     def login(self, service: str = 'msi') -> 'MjuUnivAuth':
         """
-        명시적 로그인 수행 (체이닝 지원)
+        로그인을 수행하고 self를 반환하여 체이닝을 지원합니다.
+        실패하더라도 예외를 발생시키지 않고, 내부 상태에 실패 결과를 저장합니다.
         
         Args:
-            service: 로그인할 서비스 ('lms', 'portal', 'library', 'msi', 'myicap')
+            service: 로그인할 서비스 ('main', 'msi', 'lms', 'portal', 'myicap', 'intern', 'ipp', 'ucheck')
         
         Returns:
             self (메서드 체이닝 지원)
         """
-        self._ensure_login(service=service)
-        return self
-    
-    def test_session(self, service: str = 'msi') -> bool:
-        """
-        현재 세션의 유효성을 테스트합니다.
+        authenticator = Authenticator(
+            user_id=self._user_id,
+            user_pw=self._user_pw,
+            logger=self._logger
+        )
+        result = authenticator.login(service)
         
-        Args:
-            service: 테스트할 서비스
+        if result.success:
+            self._session = result.data
+            self._login_result = result
+        else:
+            self._session = None
+            self._login_result = result
+        
+        return self
+
+    def is_logged_in(self) -> bool:
+        """현재 세션이 유효한지 확인"""
+        return self._session is not None
+
+    def get_session(self) -> MjuUnivAuthResult[requests.Session]:
+        """
+        현재 로그인된 세션을 반환합니다.
         
         Returns:
-            bool: 세션 유효 여부
+            MjuUnivAuthResult[requests.Session]: 세션 결과
         """
-        if not self._http_client:
-            return False
+        if self._session:
+            return MjuUnivAuthResult(
+                request_succeeded=True,
+                credentials_valid=True,
+                data=self._session
+            )
         
-        sso = SSOService(
-            user_id=self.user_id,
-            user_pw=self.user_pw,
-            http_client=self._http_client,
+        if self._login_result:
+            return self._login_result
+        
+        return MjuUnivAuthResult(
+            request_succeeded=False,
+            error_code=ErrorCode.AUTH_FAILED,
+            error_message="로그인이 필요합니다. .login()을 먼저 호출해주세요."
+        )
+
+    def _ensure_login(self, service: str = 'msi') -> Optional[MjuUnivAuthResult]:
+        """
+        데이터 조회 전 로그인이 되어있는지 확인하는 내부 헬퍼
+        로그인이 안 되어 있다면 자동으로 로그인 시도
+        
+        Returns:
+            실패 시 MjuUnivAuthResult, 성공 시 None
+        """
+        if self._session:
+            return None
+        
+        # 자동 로그인 시도
+        self.login(service)
+        
+        if self._session:
+            return None
+        
+        # 로그인 실패한 경우 실패 결과 반환
+        if self._login_result:
+            return self._login_result
+        
+        return MjuUnivAuthResult(
+            request_succeeded=False,
+            error_code=ErrorCode.AUTH_FAILED,
+            error_message="로그인에 실패했습니다."
+        )
+
+    # =================================================================
+    # 데이터 조회 메서드 (고수준 API)
+    # =================================================================
+
+    def get_student_card(self) -> MjuUnivAuthResult[StudentCard]:
+        """
+        학생카드 정보를 조회합니다.
+        MSI 서비스 로그인이 필요하며, 내부적으로 2차 인증을 수행합니다.
+
+        Returns:
+            MjuUnivAuthResult[StudentCard]: 학생카드 정보 조회 결과
+        """
+        if self._verbose:
+            self._logger.section("mju-univ-auth: 학생카드 조회")
+        
+        if error_result := self._ensure_login(service='msi'):
+            return error_result
+
+        fetcher = StudentCardFetcher(
+            session=self._session,
+            user_pw=self._user_pw,
             logger=self._logger,
         )
+        return fetcher.fetch()
+
+    def get_student_changelog(self) -> MjuUnivAuthResult[StudentChangeLog]:
+        """
+        학적변동내역을 조회합니다.
+        MSI 서비스 로그인이 필요합니다.
+
+        Returns:
+            MjuUnivAuthResult[StudentChangeLog]: 학적변동내역 정보 조회 결과
+        """
+        if self._verbose:
+            self._logger.section("mju-univ-auth: 학적변동내역 조회")
         
-        return sso.test_session(service=service)
-    
-    @property
-    def is_logged_in(self) -> bool:
-        """로그인 상태 확인"""
-        return self._http_client is not None and self._logged_in_service is not None
+        if error_result := self._ensure_login(service='msi'):
+            return error_result
+
+        fetcher = StudentChangeLogFetcher(
+            session=self._session,
+            logger=self._logger,
+        )
+        return fetcher.fetch()
