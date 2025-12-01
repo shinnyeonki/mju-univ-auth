@@ -5,6 +5,7 @@ MjuUnivAuth Facade
 """
 
 from typing import Optional
+import logging
 import requests
 
 from .Authenticator import Authenticator
@@ -13,7 +14,8 @@ from .student_change_log_fetcher import StudentChangeLogFetcher
 from .domain.student_card import StudentCard
 from .domain.student_changelog import StudentChangeLog
 from .results import MjuUnivAuthResult, ErrorCode
-from .utils import Logger, get_logger
+
+logger = logging.getLogger(__name__)
 
 
 class MjuUnivAuth:
@@ -59,7 +61,6 @@ class MjuUnivAuth:
         self._user_id = user_id
         self._user_pw = user_pw
         self._verbose = verbose
-        self._logger: Logger = get_logger(verbose)
         
         self._session: Optional[requests.Session] = None
         self._login_result: Optional[MjuUnivAuthResult] = None
@@ -78,7 +79,7 @@ class MjuUnivAuth:
         authenticator = Authenticator(
             user_id=self._user_id,
             user_pw=self._user_pw,
-            logger=self._logger
+            verbose=self._verbose
         )
         result = authenticator.login(service)
         
@@ -158,7 +159,7 @@ class MjuUnivAuth:
             MjuUnivAuthResult[StudentCard]: 학생카드 정보 조회 결과
         """
         if self._verbose:
-            self._logger.section("mju-univ-auth: 학생카드 조회")
+            logger.info("===== mju-univ-auth: 학생카드 조회 =====")
         
         if error_result := self._ensure_login(service='msi'):
             return error_result
@@ -166,7 +167,7 @@ class MjuUnivAuth:
         fetcher = StudentCardFetcher(
             session=self._session,
             user_pw=self._user_pw,
-            logger=self._logger,
+            verbose=self._verbose,
         )
         return fetcher.fetch()
 
@@ -179,13 +180,13 @@ class MjuUnivAuth:
             MjuUnivAuthResult[StudentChangeLog]: 학적변동내역 정보 조회 결과
         """
         if self._verbose:
-            self._logger.section("mju-univ-auth: 학적변동내역 조회")
+            logger.info("===== mju-univ-auth: 학적변동내역 조회 =====")
         
         if error_result := self._ensure_login(service='msi'):
             return error_result
 
         fetcher = StudentChangeLogFetcher(
             session=self._session,
-            logger=self._logger,
+            verbose=self._verbose,
         )
         return fetcher.fetch()

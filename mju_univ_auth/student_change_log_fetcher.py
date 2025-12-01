@@ -4,11 +4,11 @@
 MSI 서비스에서 학적변동내역을 조회합니다.
 """
 
-from typing import Optional
+import logging
 import requests
 
 from .base_fetcher import BaseFetcher
-from .config import MSIUrls, TIMEOUT_CONFIG
+from .config import SERVICES, TIMEOUT_CONFIG
 from .infrastructure.parser import HTMLParser
 from .domain.student_changelog import StudentChangeLog
 from .exceptions import (
@@ -16,7 +16,8 @@ from .exceptions import (
     PageParsingError,
     SessionExpiredError,
 )
-from .utils import Logger, get_logger
+
+logger = logging.getLogger(__name__)
 
 
 class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
@@ -25,17 +26,17 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
     def __init__(
         self,
         session: requests.Session,
-        logger: Optional[Logger] = None,
+        verbose: bool = False,
     ):
         """
         Args:
             session: 로그인된 세션
-            logger: 로거
+            verbose: 상세 로그 출력 여부
         """
         super().__init__(session)
-        self.logger = logger or get_logger(False)
+        self._verbose = verbose
 
-        self._csrf_token: Optional[str] = None
+        self._csrf_token: str | None = None
 
     def _execute(self) -> StudentChangeLog:
         """
@@ -44,7 +45,8 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
         Returns:
             StudentChangeLog: 조회된 학적변동내역 정보
         """
-        self.logger.step("B", "학적변동내역 정보 조회 시작")
+        if self._verbose:
+            logger.info("[Step B] 학적변동내역 정보 조회 시작")
 
         # 1. CSRF 토큰 획득
         self._get_csrf_token()
@@ -55,20 +57,23 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
         # 3. 정보 파싱
         changelog = self._parse_changelog(html)
 
-        self.logger.success("학적변동내역 정보 조회 완료")
+        if self._verbose:
+            logger.info("✓ 학적변동내역 정보 조회 완료")
         return changelog
 
     def _get_csrf_token(self) -> None:
         """MSI 홈페이지에서 CSRF 토큰 추출"""
-        self.logger.step("B-1", "CSRF 토큰 추출")
-        self.logger.request('GET', MSIUrls.HOME)
+        if self._verbose:
+            logger.info("[Step B-1] CSRF 토큰 추출")
+            logger.debug(f"GET {SERVICES['msi'].endpoints.HOME}")
 
         try:
-            response = self.session.get(MSIUrls.HOME, timeout=TIMEOUT_CONFIG.default)
+            response = self.session.get(SERVICES['msi'].endpoints.HOME, timeout=TIMEOUT_CONFIG.default)
         except requests.RequestException as e:
-            raise NetworkError("MSI 홈페이지 접속 실패", url=MSIUrls.HOME, original_error=e)
+            raise NetworkError("MSI 홈페이지 접속 실패", url=SERVICES['msi'].endpoints.HOME, original_error=e)
         
-        self.logger.response(response, show_body=False)
+        if self._verbose:
+            logger.debug(f"Response: {response.status_code} - {response.url}")
 
         # 세션 만료 확인
         if 'sso.mju.ac.kr' in response.url:
@@ -79,12 +84,14 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
         if not self._csrf_token:
             raise PageParsingError("CSRF 토큰을 찾을 수 없습니다.", field="csrf")
 
-        self.logger.info("CSRF Token", self._csrf_token)
-        self.logger.success("CSRF 토큰 추출 완료")
+        if self._verbose:
+            logger.debug(f"CSRF Token: {self._csrf_token}")
+            logger.info("✓ CSRF 토큰 추출 완료")
 
     def _access_changelog_page(self) -> str:
         """학적변동내역 페이지 접근"""
-        self.logger.step("B-2", "학적변동내역 페이지 접근")
+        if self._verbose:
+            logger.info("[Step B-2] 학적변동내역 페이지 접근")
 
         form_data = {
             'sysdiv': 'SCH',
@@ -97,29 +104,32 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Origin': 'https://msi.mju.ac.kr',
-            'Referer': MSIUrls.HOME,
+            'Referer': SERVICES['msi'].endpoints.HOME,
             'X-CSRF-TOKEN': self._csrf_token,
         }
 
-        self.logger.request('POST', MSIUrls.CHANGE_LOG, headers, form_data)
+        if self._verbose:
+            logger.debug(f"POST {SERVICES['msi'].endpoints.CHANGE_LOG}")
 
         try:
             response = self.session.post(
-                MSIUrls.CHANGE_LOG,
+                SERVICES['msi'].endpoints.CHANGE_LOG,
                 data=form_data,
                 headers=headers,
                 timeout=TIMEOUT_CONFIG.page_access,
             )
         except requests.RequestException as e:
-            raise NetworkError("학적변동내역 페이지 접근 실패", url=MSIUrls.CHANGE_LOG, original_error=e)
+            raise NetworkError("학적변동내역 페이지 접근 실패", url=SERVICES['msi'].endpoints.CHANGE_LOG, original_error=e)
         
-        self.logger.response(response, show_body=False)
+        if self._verbose:
+            logger.debug(f"Response: {response.status_code} - {response.url}")
 
         return response.text
 
     def _parse_changelog(self, html: str) -> StudentChangeLog:
         """학적변동내역 HTML 파싱"""
-        self.logger.step("B-3", "학적변동내역 정보 파싱")
+        if self._verbose:
+            logger.info("[Step B-3] 학적변동내역 정보 파싱")
 
         fields = HTMLParser.parse_change_log_fields(html)
 
@@ -128,5 +138,6 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
 
         changelog = StudentChangeLog.from_parsed_fields(fields)
 
-        self.logger.success("학적변동내역 정보 파싱 완료")
+        if self._verbose:
+            logger.info("✓ 학적변동내역 정보 파싱 완료")
         return changelog

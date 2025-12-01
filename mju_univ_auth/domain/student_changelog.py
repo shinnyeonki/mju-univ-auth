@@ -32,18 +32,21 @@ class StudentChangeLog:
     
     def print_summary(self) -> None:
         """학적변동내역 정보 요약 출력"""
-        from ..utils import Colors
+        # ANSI 컬러 코드
+        HEADER = '\033[95m'
+        CYAN = '\033[96m'
+        END = '\033[0m'
         
-        print(f"\n{Colors.HEADER}{'='*60}")
+        print(f"\n{HEADER}{'='*60}")
         print(f" 학적변동내역 조회 결과")
-        print(f"{Colors.HEADER}{'='*60}{Colors.END}")
+        print(f"{'='*60}{END}")
         
-        print(f"  {Colors.CYAN}학번:{Colors.END} {self.student_id}")
-        print(f"  {Colors.CYAN}성명:{Colors.END} {self.name}")
-        print(f"  {Colors.CYAN}학적상태:{Colors.END} {self.status}")
-        print(f"  {Colors.CYAN}학년:{Colors.END} {self.grade}")
-        print(f"  {Colors.CYAN}이수학기:{Colors.END} {self.completed_semesters}")
-        print(f"  {Colors.CYAN}학부(과):{Colors.END} {self.department}")
+        print(f"  {CYAN}학번:{END} {self.student_id}")
+        print(f"  {CYAN}성명:{END} {self.name}")
+        print(f"  {CYAN}학적상태:{END} {self.status}")
+        print(f"  {CYAN}학년:{END} {self.grade}")
+        print(f"  {CYAN}이수학기:{END} {self.completed_semesters}")
+        print(f"  {CYAN}학부(과):{END} {self.department}")
     
     @classmethod
     def from_parsed_fields(cls, fields: Dict[str, str]) -> 'StudentChangeLog':

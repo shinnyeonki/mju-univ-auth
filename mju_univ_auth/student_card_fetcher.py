@@ -5,11 +5,11 @@ MSI 서비스에서 학생카드 정보를 조회합니다.
 """
 
 import re
-from typing import Optional
+import logging
 import requests
 
 from .base_fetcher import BaseFetcher
-from .config import MSIUrls, TIMEOUT_CONFIG
+from .config import SERVICES, TIMEOUT_CONFIG
 from .infrastructure.parser import HTMLParser
 from .domain.student_card import StudentCard
 from .exceptions import (
@@ -18,7 +18,8 @@ from .exceptions import (
     InvalidCredentialsError,
     SessionExpiredError,
 )
-from .utils import Logger, get_logger
+
+logger = logging.getLogger(__name__)
 
 
 class StudentCardFetcher(BaseFetcher[StudentCard]):
@@ -28,20 +29,20 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         self,
         session: requests.Session,
         user_pw: str,
-        logger: Optional[Logger] = None,
+        verbose: bool = False,
     ):
         """
         Args:
             session: 로그인된 세션
             user_pw: 비밀번호 (2차 인증에 사용)
-            logger: 로거
+            verbose: 상세 로그 출력 여부
         """
         super().__init__(session)
         self.user_pw = user_pw
-        self.logger = logger or get_logger(False)
+        self._verbose = verbose
 
-        self._csrf_token: Optional[str] = None
-        self._last_url: Optional[str] = None
+        self._csrf_token: str | None = None
+        self._last_url: str | None = None
 
     def _execute(self) -> StudentCard:
         """
@@ -50,7 +51,8 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         Returns:
             StudentCard: 조회된 학생카드 정보
         """
-        self.logger.step("A", "학생카드 정보 조회 시작")
+        if self._verbose:
+            logger.info("[Step A] 학생카드 정보 조회 시작")
 
         # 1. CSRF 토큰 획득
         self._get_csrf_token()
@@ -60,7 +62,8 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
 
         # 3. 비밀번호 인증 필요 여부 확인 및 처리
         if self._is_password_required(html):
-            self.logger.warning("2차 비밀번호 인증이 필요합니다.")
+            if self._verbose:
+                logger.warning("2차 비밀번호 인증이 필요합니다.")
             html = self._submit_password(html)
             html = self._handle_redirect_form(html)
 
@@ -70,20 +73,23 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         # 4. 학생 정보 파싱
         student_card = self._parse_student_card(html)
 
-        self.logger.success("학생카드 정보 조회 완료")
+        if self._verbose:
+            logger.info("✓ 학생카드 정보 조회 완료")
         return student_card
 
     def _get_csrf_token(self) -> None:
         """MSI 홈페이지에서 CSRF 토큰 추출"""
-        self.logger.step("A-1", "CSRF 토큰 추출")
-        self.logger.request('GET', MSIUrls.HOME)
+        if self._verbose:
+            logger.info("[Step A-1] CSRF 토큰 추출")
+            logger.debug(f"GET {SERVICES['msi'].endpoints.HOME}")
 
         try:
-            response = self.session.get(MSIUrls.HOME, timeout=TIMEOUT_CONFIG.default)
+            response = self.session.get(SERVICES['msi'].endpoints.HOME, timeout=TIMEOUT_CONFIG.default)
         except requests.RequestException as e:
-            raise NetworkError("MSI 홈페이지 접속 실패", url=MSIUrls.HOME, original_error=e)
+            raise NetworkError("MSI 홈페이지 접속 실패", url=SERVICES['msi'].endpoints.HOME, original_error=e)
         
-        self.logger.response(response, show_body=False)
+        if self._verbose:
+            logger.debug(f"Response: {response.status_code} - {response.url}")
 
         # 세션 만료 확인
         if 'sso.mju.ac.kr' in response.url:
@@ -94,12 +100,14 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         if not self._csrf_token:
             raise PageParsingError("CSRF 토큰을 찾을 수 없습니다.", field="csrf")
 
-        self.logger.info("CSRF Token", self._csrf_token)
-        self.logger.success("CSRF 토큰 추출 완료")
+        if self._verbose:
+            logger.debug(f"CSRF Token: {self._csrf_token}")
+            logger.info("✓ CSRF 토큰 추출 완료")
 
     def _access_student_card_page(self) -> str:
         """학생카드 페이지 접근"""
-        self.logger.step("A-2", "학생카드 페이지 접근")
+        if self._verbose:
+            logger.info("[Step A-2] 학생카드 페이지 접근")
 
         form_data = {
             'sysdiv': 'SCH',
@@ -113,23 +121,25 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Origin': 'https://msi.mju.ac.kr',
-            'Referer': MSIUrls.HOME,
+            'Referer': SERVICES['msi'].endpoints.HOME,
             'X-CSRF-TOKEN': self._csrf_token,
         }
 
-        self.logger.request('POST', MSIUrls.STUDENT_CARD, headers, form_data)
+        if self._verbose:
+            logger.debug(f"POST {SERVICES['msi'].endpoints.STUDENT_CARD}")
 
         try:
             response = self.session.post(
-                MSIUrls.STUDENT_CARD,
+                SERVICES['msi'].endpoints.STUDENT_CARD,
                 data=form_data,
                 headers=headers,
                 timeout=TIMEOUT_CONFIG.page_access,
             )
         except requests.RequestException as e:
-            raise NetworkError("학생카드 페이지 접근 실패", url=MSIUrls.STUDENT_CARD, original_error=e)
+            raise NetworkError("학생카드 페이지 접근 실패", url=SERVICES['msi'].endpoints.STUDENT_CARD, original_error=e)
         
-        self.logger.response(response, show_body=False)
+        if self._verbose:
+            logger.debug(f"Response: {response.status_code} - {response.url}")
 
         self._last_url = response.url
         return response.text
@@ -140,11 +150,12 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
 
     def _submit_password(self, html: str) -> str:
         """2차 비밀번호 인증"""
-        self.logger.step("A-3", "2차 비밀번호 인증")
+        if self._verbose:
+            logger.info("[Step A-3] 2차 비밀번호 인증")
 
         # originalurl 추출
         original_match = re.search(r'name="originalurl"\s+value="([^"]+)"', html)
-        original_url = original_match.group(1) if original_match else MSIUrls.STUDENT_CARD
+        original_url = original_match.group(1) if original_match else SERVICES['msi'].endpoints.STUDENT_CARD
 
         form_data = {
             'originalurl': original_url,
@@ -155,42 +166,47 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Origin': 'https://msi.mju.ac.kr',
-            'Referer': self._last_url or MSIUrls.STUDENT_CARD,
+            'Referer': self._last_url or SERVICES['msi'].endpoints.STUDENT_CARD,
             'X-CSRF-TOKEN': self._csrf_token,
         }
 
-        self.logger.request('POST', MSIUrls.PASSWORD_VERIFY, headers, {'originalurl': original_url, 'tfpassword': '****', '_csrf': self._csrf_token})
+        if self._verbose:
+            logger.debug(f"POST {SERVICES['msi'].endpoints.PASSWORD_VERIFY}")
 
         try:
             response = self.session.post(
-                MSIUrls.PASSWORD_VERIFY,
+                SERVICES['msi'].endpoints.PASSWORD_VERIFY,
                 data=form_data,
                 headers=headers,
                 timeout=TIMEOUT_CONFIG.page_access,
             )
         except requests.RequestException as e:
-            raise NetworkError("비밀번호 인증 요청 실패", url=MSIUrls.PASSWORD_VERIFY, original_error=e)
+            raise NetworkError("비밀번호 인증 요청 실패", url=SERVICES['msi'].endpoints.PASSWORD_VERIFY, original_error=e)
         
-        self.logger.response(response, show_body=True)
+        if self._verbose:
+            logger.debug(f"Response: {response.status_code} - {response.url}")
 
         self._last_url = response.url
         return response.text
 
     def _handle_redirect_form(self, html: str) -> str:
         """2차 인증 후 리다이렉트 폼 처리"""
-        self.logger.step("A-4", "리다이렉트 폼 처리")
+        if self._verbose:
+            logger.info("[Step A-4] 리다이렉트 폼 처리")
 
         action_match = re.search(r'action\s*=\s*["\'](https[^"\']+)["\']', html)
         csrf_match = re.search(r'name=["\']_csrf["\'][^>]*value=["\']([^"]+)["\']', html)
 
         action = action_match.group(1) if action_match else ''
         if not action or 'Sum00Svl01getStdCard' not in action:
-            self.logger.warning("리다이렉트 폼을 찾지 못했습니다.")
+            if self._verbose:
+                logger.warning("리다이렉트 폼을 찾지 못했습니다.")
             return html
 
         csrf = csrf_match.group(1) if csrf_match else self._csrf_token
 
-        self.logger.info("Redirect URL", action)
+        if self._verbose:
+            logger.debug(f"Redirect URL: {action}")
 
         form_data = {'_csrf': csrf}
         headers = {
@@ -203,15 +219,17 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         try:
             response = self.session.post(action, data=form_data, headers=headers, timeout=TIMEOUT_CONFIG.page_access)
         except requests.RequestException as e:
-            raise NetworkError("리다이렉트 폼 제출 실패", url=action, original_error=e)
+            raise NetworkError("리다렉트 폼 제출 실패", url=action, original_error=e)
         
-        self.logger.response(response, show_body=False)
+        if self._verbose:
+            logger.debug(f"Response: {response.status_code} - {response.url}")
 
         return response.text
 
     def _parse_student_card(self, html: str) -> StudentCard:
         """학생카드 HTML 파싱"""
-        self.logger.step("A-5", "학생 정보 파싱")
+        if self._verbose:
+            logger.info("[Step A-5] 학생 정보 파싱")
 
         fields = HTMLParser.parse_student_card_fields(html)
 
@@ -220,5 +238,6 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
 
         student_card = StudentCard.from_parsed_fields(fields)
 
-        self.logger.success("학생 정보 파싱 완료")
+        if self._verbose:
+            logger.info("✓ 학생 정보 파싱 완료")
         return student_card

@@ -5,7 +5,7 @@
 """
 
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional, Any
 
 
 @dataclass(frozen=True)
@@ -14,6 +14,17 @@ class ServiceConfig:
     name: str
     auth_url: str
     final_url: str
+    endpoints: Optional[Any] = None
+
+
+@dataclass(frozen=True)
+class MSIEndpoints:
+    """MSI 서비스의 URL 정의"""
+    BASE = "https://msi.mju.ac.kr"
+    HOME = "https://msi.mju.ac.kr/servlet/security/MySecurityStart"
+    STUDENT_CARD = "https://msi.mju.ac.kr/servlet/su/sum/Sum00Svl01getStdCard"
+    PASSWORD_VERIFY = "https://msi.mju.ac.kr/servlet/sys/sys15/Sys15Svl01verifyPW"
+    CHANGE_LOG = "https://msi.mju.ac.kr/servlet/su/sud/Sud00Svl03viewChangeLog"
 
 
 # 서비스별 설정
@@ -37,6 +48,7 @@ SERVICES: Dict[str, ServiceConfig] = {
         name='MSI (학사행정시스템)',
         auth_url='https://sso.mju.ac.kr/sso/auth?client_id=msi&response_type=code&state=1764563066913&tkn_type=normal&redirect_uri=https%3A%2F%2Fmsi.mju.ac.kr%2Findex_Myiweb.jsp',
         final_url='https://msi.mju.ac.kr/servlet/security/MySecurityStart',
+        endpoints=MSIEndpoints(),
     ),
     'lms': ServiceConfig(
         name='LMS (LearnUs)',
@@ -70,15 +82,6 @@ SERVICES: Dict[str, ServiceConfig] = {
     ),
 }
 
-
-# MSI 서비스 URL 설정
-class MSIUrls:
-    """MSI 서비스의 URL 정의"""
-    BASE = "https://msi.mju.ac.kr"
-    HOME = "https://msi.mju.ac.kr/servlet/security/MySecurityStart"
-    STUDENT_CARD = "https://msi.mju.ac.kr/servlet/su/sum/Sum00Svl01getStdCard"
-    PASSWORD_VERIFY = "https://msi.mju.ac.kr/servlet/sys/sys15/Sys15Svl01verifyPW"
-    CHANGE_LOG = "https://msi.mju.ac.kr/servlet/su/sud/Sud00Svl03viewChangeLog"
 
 
 # HTTP 기본 설정

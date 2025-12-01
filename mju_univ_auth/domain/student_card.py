@@ -84,37 +84,41 @@ class StudentCard:
     
     def print_summary(self) -> None:
         """학생 정보 요약 출력"""
-        from ..utils import Colors
+        # ANSI 컬러 코드
+        HEADER = '\033[95m'
+        CYAN = '\033[96m'
+        END = '\033[0m'
+        BOLD = '\033[1m'
         
-        print(f"\n{Colors.HEADER}{'='*60}")
+        print(f"\n{HEADER}{'='*60}")
         print(f" 학생카드 정보 조회 결과")
-        print(f"{Colors.HEADER}{'='*60}{Colors.END}")
+        print(f"{'='*60}{END}")
         
-        print(f"\n{Colors.BOLD}[기본 정보]{Colors.END}")
-        print(f"  {Colors.CYAN}학번:{Colors.END} {self.student_id}")
-        print(f"  {Colors.CYAN}한글성명:{Colors.END} {self.name_korean}")
-        print(f"  {Colors.CYAN}영문성명:{Colors.END} {self.name_english}")
+        print(f"\n{BOLD}[기본 정보]{END}")
+        print(f"  {CYAN}학번:{END} {self.student_id}")
+        print(f"  {CYAN}한글성명:{END} {self.name_korean}")
+        print(f"  {CYAN}영문성명:{END} {self.name_english}")
         
-        print(f"\n{Colors.BOLD}[학적 정보]{Colors.END}")
-        print(f"  {Colors.CYAN}학년:{Colors.END} {self.grade}")
-        print(f"  {Colors.CYAN}학적상태:{Colors.END} {self.status}")
-        print(f"  {Colors.CYAN}학부(과):{Colors.END} {self.department}")
-        print(f"  {Colors.CYAN}상담교수:{Colors.END} {self.advisor}")
+        print(f"\n{BOLD}[학적 정보]{END}")
+        print(f"  {CYAN}학년:{END} {self.grade}")
+        print(f"  {CYAN}학적상태:{END} {self.status}")
+        print(f"  {CYAN}학부(과):{END} {self.department}")
+        print(f"  {CYAN}상담교수:{END} {self.advisor}")
         if self.design_advisor:
-            print(f"  {Colors.CYAN}학생설계전공지도교수:{Colors.END} {self.design_advisor}")
+            print(f"  {CYAN}학생설계전공지도교수:{END} {self.design_advisor}")
         
-        print(f"\n{Colors.BOLD}[연락처]{Colors.END}")
-        print(f"  {Colors.CYAN}전화번호:{Colors.END} {self.phone}")
-        print(f"  {Colors.CYAN}휴대폰:{Colors.END} {self.mobile}")
-        print(f"  {Colors.CYAN}E-Mail:{Colors.END} {self.email}")
+        print(f"\n{BOLD}[연락처]{END}")
+        print(f"  {CYAN}전화번호:{END} {self.phone}")
+        print(f"  {CYAN}휴대폰:{END} {self.mobile}")
+        print(f"  {CYAN}E-Mail:{END} {self.email}")
         
-        print(f"\n{Colors.BOLD}[주소]{Colors.END}")
-        print(f"  {Colors.CYAN}현거주지:{Colors.END} {self.current_address}")
-        print(f"  {Colors.CYAN}주민등록:{Colors.END} {self.registered_address}")
+        print(f"\n{BOLD}[주소]{END}")
+        print(f"  {CYAN}현거주지:{END} {self.current_address}")
+        print(f"  {CYAN}주민등록:{END} {self.registered_address}")
         
         if self.photo_base64:
-            print(f"\n{Colors.BOLD}[사진]{Colors.END}")
-            print(f"  {Colors.CYAN}사진 데이터:{Colors.END} Base64 ({len(self.photo_base64)} chars)")
+            print(f"\n{BOLD}[사진]{END}")
+            print(f"  {CYAN}사진 데이터:{END} Base64 ({len(self.photo_base64)} chars)")
     
     @classmethod
     def from_parsed_fields(cls, fields: Dict[str, Any]) -> 'StudentCard':
