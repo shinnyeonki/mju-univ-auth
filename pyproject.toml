@@ -1,21 +1,29 @@
 [project]
 name = "mju_univ_auth"
-version = "0.3.1"
+version = "0.4.0"
 description = "명지대학교 학생 인증 및 정보 조회를 위한 Python 라이브러리"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Shin Nyeon Ki", email = "sygys10293@mju.ac.kr"}]
 dependencies = [
-    "bs4>=0.0.2",
-    "cryptography>=46.0.3",
-    "dotenv>=0.9.9",
-    "lxml>=6.0.2",
-    "requests>=2.32.5",
+    "beautifulsoup4>=4.12.0",
+    "cryptography>=41.0.0",
+    "lxml>=4.9.0",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
 ]
 
 [tool.setuptools.packages.find]
 exclude = [
     "pypi*",
     "test_pypi*",
+    "deployment*",
 ]
+
