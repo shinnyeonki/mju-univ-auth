@@ -110,8 +110,8 @@ class MjuUnivAuth:
                 data=self._session
             )
         
-        if self._login_result:
-            return self._login_result
+        # 로그인 실패한 경우 실패 결과 반환. Use explicit `is not None` to avoid
+        if self._login_result is not None: return self._login_result
         
         return MjuUnivAuthResult(
             request_succeeded=False,
@@ -137,7 +137,9 @@ class MjuUnivAuth:
             return None
         
         # 로그인 실패한 경우 실패 결과 반환
-        if self._login_result:
+        # 로그인 실패한 경우 실패 결과 반환. Use explicit `is not None` to avoid
+        # evaluating a failed MjuUnivAuthResult as False.
+        if self._login_result is not None:
             return self._login_result
         
         return MjuUnivAuthResult(
@@ -161,7 +163,11 @@ class MjuUnivAuth:
         if self._verbose:
             logger.info("===== mju-univ-auth: 학생카드 조회 =====")
         
-        if error_result := self._ensure_login(service='msi'):
+        # _ensure_login returns None on success, or an MjuUnivAuthResult on failure.
+        # Use an explicit `is not None` check because MjuUnivAuthResult.__bool__ reflects
+        # `success` which can be False for failed login results, causing the `if` to skip
+        # and execution to continue incorrectly (see GH issue: failed-login->UNKNOWN).
+        if (error_result := self._ensure_login(service='msi')) is not None:
             return error_result
 
         fetcher = StudentCardFetcher(
@@ -182,7 +188,9 @@ class MjuUnivAuth:
         if self._verbose:
             logger.info("===== mju-univ-auth: 학적변동내역 조회 =====")
         
-        if error_result := self._ensure_login(service='msi'):
+        # Same explicit None check as above to avoid accidentally continuing when
+        # login failed but the result evaluates to False.
+        if (error_result := self._ensure_login(service='msi')) is not None:
             return error_result
 
         fetcher = StudentChangeLogFetcher(
