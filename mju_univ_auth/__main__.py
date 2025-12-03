@@ -127,7 +127,7 @@ def test_all_services_login(user_id: str, user_pw: str) -> List[Tuple[str, bool,
         authenticator = Authenticator(
             user_id=user_id,
             user_pw=user_pw,
-            verbose=False
+            verbose=True
         )
         
         login_result = authenticator.login(service_name)
@@ -307,9 +307,10 @@ def main():
         print("  MJU_PW=비밀번호")
         return
     
+    # logging.getLogger().setLevel(logging.DEBUG)
     # 테스트 실행
-    high_level_ok = test_high_level_api(user_id, user_pw)
-    # service_results = test_all_services_login(user_id, user_pw)
+    # high_level_ok = test_high_level_api(user_id, user_pw)
+    service_results = test_all_services_login(user_id, user_pw)
     # fetcher_ok = test_fetchers_with_session(user_id, user_pw)
     # chaining_ok = test_chaining_api(user_id, user_pw)
     

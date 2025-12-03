@@ -55,11 +55,12 @@ SERVICES: Dict[str, ServiceConfig] = {
         auth_url='https://sso.mju.ac.kr/sso/auth?response_type=code&client_id=lms&state=Random%20String&redirect_uri=https://lms.mju.ac.kr/ilos/sso/sso_response.jsp',
         final_url='https://lms.mju.ac.kr/ilos/main/main_form.acl',
     ),
-    # 'portal': ServiceConfig(
-    #     name='Portal (공지/신청)',
-    #     auth_url='https://sso.mju.ac.kr/sso/auth?client_id=portal&response_type=code&state=1764563685370&rd_c_p=loginparam&tkn_type=normal&redirect_uri=https%3A%2F%2Fportal.mju.ac.kr%2Fsso%2Fresponse.jsp',
-    #     final_url='https://portal.mju.ac.kr/p/S00/',
-    # ),
+    'portal': ServiceConfig(
+        name='Portal (공지/신청)',
+        auth_url='https://sso.mju.ac.kr/sso/auth?client_id=portal&response_type=code&state=1764563685370&rd_c_p=loginparam&tkn_type=normal&redirect_uri=https%3A%2F%2Fportal.mju.ac.kr%2Fsso%2Fresponse.jsp',
+        final_url='https://portal.mju.ac.kr/p/S00/',
+        # final_url='https://portal.mju.ac.kr/',
+    ),
     'myicap': ServiceConfig(
         name='MyiCAP (캡스톤/현장실습)',
         auth_url='https://sso.mju.ac.kr/sso/auth?client_id=myicap&response_type=code&state=1764563719271&rd_c_p=loginparam&tkn_type=normal&redirect_uri=https%3A%2F%2Fmyicap.mju.ac.kr%2Findex.jsp',
@@ -80,6 +81,11 @@ SERVICES: Dict[str, ServiceConfig] = {
         auth_url='https://sso.mju.ac.kr/sso/auth?response_type=code&client_id=ucheck&state=sso-1764564022377&redirect_uri=https%3A%2F%2Fucheck.mju.ac.kr',
         final_url='https://ucheck.mju.ac.kr/',
     ),
+    # 'sugang': ServiceConfig(
+    #     name='수강신청 시스템',
+    #     auth_url='https://class.mju.ac.kr/',
+    #     final_url='https://class.mju.ac.kr/main?lang=ko',
+    # ),
 }
 
 

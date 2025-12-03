@@ -258,7 +258,7 @@ class Authenticator:
         return (current_parsed.netloc == final_parsed.netloc and 
                 current_parsed.path.rstrip('/') == final_parsed.path.rstrip('/'))
 
-    def _handle_redirects(self, response, final_url: str, max_redirects: int = 10):
+    def _handle_redirects(self, response, final_url: str, max_redirects: int = 3):
         """JavaScript 폼 제출 및 리다이렉트 처리 (최종 URL에 도달할 때까지)"""
         for i in range(max_redirects):
             # 최종 URL에 도달했으면 중단
@@ -305,10 +305,15 @@ class Authenticator:
                     logger.info(f"[Step 3-{i+2}] JS 리다이렉트 따라가기")
                     logger.debug(f"JS Redirect URL: {redirect_url}")
 
+                # 응답 URL을 사용하여 상대 리다이렉트를 절대 URL로 변환
+                action_url = self._build_absolute_url(response.url, redirect_url)
+                if self._verbose:
+                    logger.debug(f"Resolved JS Redirect URL: {action_url}")
+
                 try:
-                    response = self._session.get(redirect_url, timeout=TIMEOUT_CONFIG.login)
+                    response = self._session.get(action_url, timeout=TIMEOUT_CONFIG.login)
                 except requests.RequestException as e:
-                    raise NetworkError("리다이렉트 실패", url=redirect_url, original_error=e)
+                    raise NetworkError("리다이렉트 실패", url=action_url, original_error=e)
                     
                 if self._verbose:
                     logger.debug(f"Response: {response.status_code} - {response.url}")

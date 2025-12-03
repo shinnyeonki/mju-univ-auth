@@ -1,6 +1,6 @@
 [project]
 name = "mju_univ_auth"
-version = "0.5.1"
+version = "0.5.2"
 description = "명지대학교 학생 인증 및 정보 조회를 위한 Python 라이브러리"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -14,16 +14,16 @@ dependencies = [
     "python-dotenv>=1.0.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-]
-
 [tool.setuptools.packages.find]
 exclude = [
     "pypi*",
     "test_pypi*",
     "deployment*",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+    "pytest-cov>=7.0.0",
 ]
 

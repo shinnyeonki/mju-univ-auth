@@ -153,9 +153,29 @@ class HTMLParser:
     
     @classmethod
     def extract_js_redirect(cls, html: str) -> Optional[str]:
-        """JavaScript 리다이렉트 URL 추출"""
-        match = re.search(r"location\.href\s*=\s*['\"](https?://[^'\"]+)['\"]", html)
-        return match.group(1) if match else None
+        """JavaScript 리다이렉트 URL 추출
+
+        다음과 같은 패턴을 지원합니다:
+        - location.href = '/path' 또는 'https://...'
+        - window.location = '/path' 또는 'https://...'
+        - location.replace('/path') 또는 location.assign('/path')
+        반환된 값은 절대 또는 상대 URL일 수 있습니다; 필요한 경우 호출자가
+        응답 URL로 이를 해결해야 합니다.
+        """
+        # location.replace('/path') 또는 location.assign('/path') 또는 location.href = '...'
+        patterns = [
+            r"(?:location|window\.location)\.href\s*=\s*['\"](?P<url>[^'\"]+)['\"]",
+            r"(?:location|window\.location)\s*=\s*['\"](?P<url>[^'\"]+)['\"]",
+            # r"(?:location\.replace|location\.assign)\s*\(\s*['\"](?P<url>[^'\"]+)['\"]\s*\)",
+            # r"window\.location\.replace\(\s*['\"](?P<url>[^'\"]+)['\"]\s*\)",
+        ]
+
+        for pat in patterns:
+            match = re.search(pat, html)
+            if match:
+                return match.group('url')
+
+        return None
     
     @classmethod
     def has_js_form_submit(cls, html: str) -> bool:
