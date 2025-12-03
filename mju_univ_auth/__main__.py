@@ -24,7 +24,7 @@ from typing import List, Tuple
 from dotenv import load_dotenv
 
 from .facade import MjuUnivAuth
-from .Authenticator import Authenticator
+from .authenticator import Authenticator
 from .student_card_fetcher import StudentCardFetcher
 from .student_change_log_fetcher import StudentChangeLogFetcher
 from .config import SERVICES

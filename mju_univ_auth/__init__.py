@@ -23,7 +23,7 @@ MSI(My iWeb) 서비스에 접속하여 학생 정보를 조회하는 모듈
 from .facade import MjuUnivAuth
 
 # 기반 클래스
-from .Authenticator import Authenticator
+from .authenticator import Authenticator
 from .base_fetcher import BaseFetcher
 
 # Fetcher 클래스
