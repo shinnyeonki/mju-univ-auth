@@ -19,12 +19,22 @@ class ServiceConfig:
 
 @dataclass(frozen=True)
 class MSIEndpoints:
-    """MSI 서비스의 URL 정의"""
+    """명지대 MSI 서비스의 URL 정의"""
     BASE = "https://msi.mju.ac.kr"
     HOME = "https://msi.mju.ac.kr/servlet/security/MySecurityStart"
     STUDENT_CARD = "https://msi.mju.ac.kr/servlet/su/sum/Sum00Svl01getStdCard"
     PASSWORD_VERIFY = "https://msi.mju.ac.kr/servlet/sys/sys15/Sys15Svl01verifyPW"
     CHANGE_LOG = "https://msi.mju.ac.kr/servlet/su/sud/Sud00Svl03viewChangeLog"
+
+
+@dataclass(frozen=True)
+class SugangEndpoints:
+    """수강신청 시스템의 URL 정의"""
+    BASE = "https://class.mju.ac.kr"
+    LOGIN_PAGE = "https://class.mju.ac.kr/"
+    LOGIN_PROC = "https://class.mju.ac.kr/loginproc"
+    MAIN = "https://class.mju.ac.kr/main"
+    LECTURE_SEARCH = "https://class.mju.ac.kr/ajax/lectureSearch"
 
 
 # 서비스별 설정
@@ -81,11 +91,12 @@ SERVICES: Dict[str, ServiceConfig] = {
         auth_url='https://sso.mju.ac.kr/sso/auth?response_type=code&client_id=ucheck&state=sso-1764564022377&redirect_uri=https%3A%2F%2Fucheck.mju.ac.kr',
         final_url='https://ucheck.mju.ac.kr/',
     ),
-    # 'sugang': ServiceConfig(
-    #     name='수강신청 시스템',
-    #     auth_url='https://class.mju.ac.kr/',
-    #     final_url='https://class.mju.ac.kr/main?lang=ko',
-    # ),
+    'sugang': ServiceConfig(
+        name='수강신청 시스템',
+        auth_url='https://class.mju.ac.kr/',
+        final_url='https://class.mju.ac.kr/main',
+        endpoints=SugangEndpoints(),
+    ),
 }
 
 

@@ -1,7 +1,8 @@
 import requests
 import pytest
 
-from mju_univ_auth.Authenticator import Authenticator
+from mju_univ_auth.authenticator import Authenticator
+from mju_univ_auth.standard_authenticator import StandardAuthenticator
 from mju_univ_auth.exceptions import InvalidCredentialsError
 from mju_univ_auth.results import ErrorCode
 
@@ -9,12 +10,17 @@ from mju_univ_auth.results import ErrorCode
 def test_authenticator_login_success(monkeypatch):
     auth = Authenticator(user_id='student', user_pw='pw')
 
-    # 내부 _execute_login을 모의로 바꿔 예외를 발생시키지 않게 하고 세션이 통과되도록 합니다
-    def fake_execute(session, service):
-        # 아무 동작도 하지 않고 세션을 그대로 사용합니다
-        return None
+    # StandardAuthenticator.authenticate를 모의로 바꿔 성공 결과를 반환하도록 합니다
+    from mju_univ_auth.results import MjuUnivAuthResult
+    
+    def fake_authenticate(self):
+        return MjuUnivAuthResult(
+            request_succeeded=True,
+            credentials_valid=True,
+            data=requests.Session()
+        )
 
-    monkeypatch.setattr(auth, '_execute_login', fake_execute)
+    monkeypatch.setattr(StandardAuthenticator, 'authenticate', fake_authenticate)
 
     result = auth.login(service='msi')
 
@@ -27,10 +33,17 @@ def test_authenticator_login_success(monkeypatch):
 def test_authenticator_login_invalid_credentials(monkeypatch):
     auth = Authenticator(user_id='bad', user_pw='pw')
 
-    def fake_execute(session, service):
-        raise InvalidCredentialsError('Invalid credentials', service='MSI')
+    from mju_univ_auth.results import MjuUnivAuthResult
+    
+    def fake_authenticate(self):
+        return MjuUnivAuthResult(
+            request_succeeded=True,
+            credentials_valid=False,
+            error_code=ErrorCode.AUTH_FAILED,
+            error_message='Invalid credentials'
+        )
 
-    monkeypatch.setattr(auth, '_execute_login', fake_execute)
+    monkeypatch.setattr(StandardAuthenticator, 'authenticate', fake_authenticate)
 
     result = auth.login(service='msi')
 

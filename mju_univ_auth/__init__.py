@@ -24,14 +24,24 @@ from .facade import MjuUnivAuth
 
 # 기반 클래스
 from .authenticator import Authenticator
+from .base_authenticator import BaseAuthenticator
+from .standard_authenticator import StandardAuthenticator
+from .sugang_authenticator import SugangAuthenticator
 from .base_fetcher import BaseFetcher
 
 # Fetcher 클래스
 from .student_card_fetcher import StudentCardFetcher
 from .student_change_log_fetcher import StudentChangeLogFetcher
+from .sugang_list_fetcher import SugangListFetcher
 
 # 도메인 모델
-from .domain import StudentCard, StudentChangeLog
+from .domain import (
+    StudentCard,
+    StudentChangeLog,
+    Lecture,
+    LectureSearchResult,
+    LectureSearchRequest,
+)
 
 # 결과 객체
 from .results import MjuUnivAuthResult, ErrorCode
@@ -52,15 +62,22 @@ __all__ = [
     
     # 기반 클래스
     'Authenticator',
+    'BaseAuthenticator',
+    'StandardAuthenticator',
+    'SugangAuthenticator',
     'BaseFetcher',
     
     # Fetcher 클래스
     'StudentCardFetcher',
     'StudentChangeLogFetcher',
+    'SugangListFetcher',
     
     # 데이터 클래스
     'StudentCard',
     'StudentChangeLog',
+    'Lecture',
+    'LectureSearchResult',
+    'LectureSearchRequest',
 
     # 결과 객체
     'MjuUnivAuthResult',

@@ -2,8 +2,13 @@
 
 from .student_card import StudentCard
 from .student_changelog import StudentChangeLog
+from .lecture import Lecture, LectureSearchResult
+from .lecture_search_request import LectureSearchRequest
 
 __all__ = [
     'StudentCard',
     'StudentChangeLog',
+    'Lecture',
+    'LectureSearchResult',
+    'LectureSearchRequest',
 ]
