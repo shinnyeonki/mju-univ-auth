@@ -8,7 +8,7 @@ from typing import Optional
 import logging
 import requests
 
-from .Authenticator import Authenticator
+from .authenticator import Authenticator
 from .student_card_fetcher import StudentCardFetcher
 from .student_change_log_fetcher import StudentChangeLogFetcher
 from .domain.student_card import StudentCard
