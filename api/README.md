@@ -16,32 +16,69 @@
 ```json
 {
   "user_id": "학번",
-  "password": "비밀번호"
+  "user_pw": "비밀번호"
 }
 ```
 
 **✅ 성공 응답 (200 OK)**
 ```json
 {
-  "success": true,
+  "request_succeeded": true,
+  "credentials_valid": true,
   "data": {
-    "name": "홍길동",
     "student_id": "60xxxxxx",
-    "department": "컴퓨터공학과",
-    "grade": "3",
-    "status": "재학"
-  }
+    "name_korean": "xxx",
+    "name_english": "XXX XXX",
+    "grade": "x",
+    "status": "재학",
+    "department": "(반도체·ICT대학) 컴퓨터정보통신공학부 컴퓨터공학전공",
+    "advisor": "xxx (컴퓨터정보통신공학부 컴퓨터공학전공)",
+    "design_advisor": "()",
+    "phone": "",
+    "mobile": "xxx-xxxx-xxxx",
+    "email": "xxx@mju.ac.kr",
+    "current_address": "(xxx-xxx) xx도 xx시 xx구 xx로 xx xx동 xx호",
+    "registered_address": "(xxx-xxx) xx도 xx시 xx구 xx로 xx xx동 xx호",
+    "photo_base64": "/9j/... (base64 생략)",
+    "focus_newsletter": false,
+    "completed_semesters": "7"
+  },
+  "error_code": null,
+  "error_message": "",
+  "success": true
 }
 ```
+
+아래 필드들은 일부 응답에서 생략될 수 있으며, `null` 또는 빈 문자열로 반환될 수 있습니다.
+
+필드 설명:
+
+- `student_id` (string): 학번
+- `name_korean` (string): 한글 이름
+- `name_english` (string): 영문 이름 (합쳐진 형태)
+- `grade` (string): 학년
+- `status` (string): 학적 상태 (예: `재학`, `휴학`)
+- `department` (string): 소속 학부/학과
+- `advisor` (string): 상담교수
+- `design_advisor` (string): 학생설계전공 지도교수
+- `phone` (string): 전화번호 (지국)
+- `mobile` (string): 휴대전화
+- `email` (string): 학교 이메일
+- `current_address` (string): 현거주지 전체 주소 (우편번호 포함)
+- `registered_address` (string): 주민등록 주소 (우편번호 포함)
+- `photo_base64` (string): 프로필 사진 (Base64 인코딩 문자열) — 큰 사이즈 가능, 필요하면 클라이언트에서 처리/다운로드 권장
+- `focus_newsletter` (boolean): 명지포커스 수신 여부
+- `completed_semesters` (string, optional): 이수 학기 수 (일부 응답에 포함될 수 있습니다)
 
 **❌ 실패 응답**
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "INVALID_CREDENTIALS",
-    "message": "아이디 또는 비밀번호가 틀렸습니다."
-  }
+  "request_succeeded": true,
+  "credentials_valid": false,
+  "data": null,
+  "error_code": "INVALID_CREDENTIALS",
+  "error_message": "아이디 또는 비밀번호가 틀렸습니다.",
+  "success": false
 }
 ```
 
@@ -55,14 +92,15 @@
 ```json
 {
   "user_id": "학번",
-  "password": "비밀번호"
+  "user_pw": "비밀번호"
 }
 ```
 
 **✅ 성공 응답 (200 OK)**
 ```json
 {
-  "success": true,
+  "request_succeeded": true,
+  "credentials_valid": true,
   "data": {
     "changes": [
       {
@@ -71,18 +109,22 @@
         "details": "신입학"
       }
     ]
-  }
+  },
+  "error_code": null,
+  "error_message": "",
+  "success": true
 }
 ```
 
 **❌ 실패 응답**
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "에러 메시지"
-  }
+  "request_succeeded": true,
+  "credentials_valid": false,
+  "data": null,
+  "error_code": "ERROR_CODE",
+  "error_message": "에러 메시지",
+  "success": false
 }
 ```
 
@@ -107,7 +149,7 @@
 ```bash
 curl -X POST "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card" \
   -H "Content-Type: application/json" \
-  -d '{"user_id": "60xxxxxx", "password": "your_password"}'
+  -d '{"user_id": "60xxxxxx", "user_pw": "your_password"}'
 ```
 
 ### Python
@@ -115,15 +157,15 @@ curl -X POST "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card" \
 import requests
 
 response = requests.post(
-    "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card",
-    json={"user_id": "60xxxxxx", "password": "your_password"}
+  "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card",
+  json={"user_id": "60xxxxxx", "user_pw": "your_password"}
 )
 
 result = response.json()
 if result["success"]:
     print("학생 정보:", result["data"])
 else:
-    print("에러:", result["error"]["message"])
+    print("에러:", result["error_message"])
 ```
 
 ### JavaScript
@@ -131,14 +173,14 @@ else:
 fetch('https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ user_id: '60xxxxxx', password: 'your_password' })
+  body: JSON.stringify({ user_id: '60xxxxxx', user_pw: 'your_password' })
 })
   .then(res => res.json())
   .then(result => {
     if (result.success) {
       console.log('학생 정보:', result.data);
     } else {
-      console.error('에러:', result.error.message);
+      console.error('에러:', result.error_message);
     }
   });
 ```
