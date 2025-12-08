@@ -102,13 +102,12 @@
   "request_succeeded": true,
   "credentials_valid": true,
   "data": {
-    "changes": [
-      {
-        "date": "2023-03-02",
-        "type": "입학",
-        "details": "신입학"
-      }
-    ]
+    "student_id": "60xxxxxx",
+    "name": "xxx",
+    "status": "재학",
+    "grade": "x",
+    "completed_semesters": "x",
+    "department": "컴퓨터정보통신공학부 컴퓨터공학전공"
   },
   "error_code": null,
   "error_message": "",
