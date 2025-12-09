@@ -4,7 +4,7 @@
 
 [![PyPI version](https://badge.fury.io/py/mju-univ-auth.svg)](https://pypi.org/project/mju-univ-auth/)
 [![Python](https://img.shields.io/pypi/pyversions/mju-univ-auth.svg)](https://pypi.org/project/mju-univ-auth/)
-<img src="myongji_universiry_auth_logo.png" alt="alt text" width="200">
+<img src="myongji_universiry_auth_logo.png" alt="alt text" width="500">
 ## 목차
 
 1. [목적](#1-목적)
