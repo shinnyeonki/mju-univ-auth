@@ -119,34 +119,14 @@ class MjuUnivAuth:
             error_message="로그인이 필요합니다. .login()을 먼저 호출해주세요."
         )
 
-    def _ensure_login(self, service: str = 'msi') -> Optional[MjuUnivAuthResult]:
-        """
-        데이터 조회 전 로그인이 되어있는지 확인하는 내부 헬퍼
-        로그인이 안 되어 있다면 자동으로 로그인 시도
-        
-        Returns:
-            실패 시 MjuUnivAuthResult, 성공 시 None
-        """
-        if self._session:
-            return None
-        
-        # 자동 로그인 시도
-        self.login(service)
-        
-        if self._session:
-            return None
-        
-        # 로그인 실패한 경우 실패 결과 반환
-        # 로그인 실패한 경우 실패 결과 반환. Use explicit `is not None` to avoid
-        # evaluating a failed MjuUnivAuthResult as False.
-        if self._login_result is not None:
-            return self._login_result
-        
-        return MjuUnivAuthResult(
-            request_succeeded=False,
-            error_code=ErrorCode.AUTH_FAILED,
-            error_message="로그인에 실패했습니다."
+    def _create_fresh_session(self, service: str) -> MjuUnivAuthResult[requests.Session]:
+        """요청마다 독립 세션을 생성해 로그인한다."""
+        authenticator = Authenticator(
+            user_id=self._user_id,
+            user_pw=self._user_pw,
+            verbose=self._verbose,
         )
+        return authenticator.login(service)
 
     # =================================================================
     # 데이터 조회 메서드 (고수준 API)
@@ -156,6 +136,7 @@ class MjuUnivAuth:
         """
         학생카드 정보를 조회합니다.
         MSI 서비스 로그인이 필요하며, 내부적으로 2차 인증을 수행합니다.
+        이 메서드는 호출마다 새 세션으로 로그인해 병렬 호출 시 세션 공유를 피합니다.
 
         Returns:
             MjuUnivAuthResult[StudentCard]: 학생카드 정보 조회 결과
@@ -163,15 +144,18 @@ class MjuUnivAuth:
         if self._verbose:
             logger.info("===== mju-univ-auth: 학생카드 조회 =====")
         
-        # _ensure_login returns None on success, or an MjuUnivAuthResult on failure.
-        # Use an explicit `is not None` check because MjuUnivAuthResult.__bool__ reflects
-        # `success` which can be False for failed login results, causing the `if` to skip
-        # and execution to continue incorrectly (see GH issue: failed-login->UNKNOWN).
-        if (error_result := self._ensure_login(service='msi')) is not None:
-            return error_result
+            # 1. 이미 로그인된 세션이 있으면 재사용 (체이닝 시 이 경로)
+        if self._session is not None:
+            session_to_use = self._session
+        else:
+            # 2. 그렇지 않으면 새 세션으로 로그인 (직접 호출 시 이 경로)
+            login_result = self._create_fresh_session(service='msi')
+            if not login_result.success:
+                return login_result
+            session_to_use = login_result.data
 
         fetcher = StudentCardFetcher(
-            session=self._session,
+            session=session_to_use,
             user_pw=self._user_pw,
             verbose=self._verbose,
         )
@@ -181,20 +165,26 @@ class MjuUnivAuth:
         """
         학적변동내역을 조회합니다.
         MSI 서비스 로그인이 필요합니다.
-
+        기존 로그인 세션이 있으면 재사용하고, 없으면 새 세션으로 로그인합니다.
+    
         Returns:
             MjuUnivAuthResult[StudentChangeLog]: 학적변동내역 정보 조회 결과
         """
         if self._verbose:
             logger.info("===== mju-univ-auth: 학적변동내역 조회 =====")
-        
-        # Same explicit None check as above to avoid accidentally continuing when
-        # login failed but the result evaluates to False.
-        if (error_result := self._ensure_login(service='msi')) is not None:
-            return error_result
-
+    
+        # 1. 이미 로그인된 세션이 있으면 재사용 (체이닝 시 이 경로)
+        if self._session is not None:
+            session_to_use = self._session
+        else:
+            # 2. 그렇지 않으면 새 세션으로 로그인 (직접 호출 시 이 경로)
+            login_result = self._create_fresh_session(service='msi')
+            if not login_result.success:
+                return login_result
+            session_to_use = login_result.data
+    
         fetcher = StudentChangeLogFetcher(
-            session=self._session,
+            session=session_to_use,
             verbose=self._verbose,
         )
         return fetcher.fetch()

@@ -309,13 +309,13 @@ def main():
     
     # logging.getLogger().setLevel(logging.DEBUG)
     # 테스트 실행
-    # high_level_ok = test_high_level_api(user_id, user_pw)
+    high_level_ok = test_high_level_api(user_id, user_pw)
     service_results = test_all_services_login(user_id, user_pw)
-    # fetcher_ok = test_fetchers_with_session(user_id, user_pw)
-    # chaining_ok = test_chaining_api(user_id, user_pw)
+    fetcher_ok = test_fetchers_with_session(user_id, user_pw)
+    chaining_ok = test_chaining_api(user_id, user_pw)
     
     # 결과 요약
-    # print_summary(high_level_ok, service_results, fetcher_ok, chaining_ok)
+    print_summary(high_level_ok, service_results, fetcher_ok, chaining_ok)
 
 
 if __name__ == "__main__":
