@@ -100,6 +100,10 @@ class BaseAuthenticator:
                 error_message=str(e)
             )
 
+    def _execute_login(self, session: requests.Session, service: str):
+        """자식 클래스 구현부: 실패 시 반드시 커스텀 예외를 raise 해야 함"""
+        raise NotImplementedError
+
     def is_session_valid(self, service: str = 'msi') -> bool:
         """
         현재 세션이 유효한지 확인합니다.
@@ -113,6 +117,11 @@ class BaseAuthenticator:
         """
         raise NotImplementedError
 
-    def _execute_login(self, session: requests.Session, service: str):
-        """자식 클래스 구현부: 실패 시 반드시 커스텀 예외를 raise 해야 함"""
-        raise NotImplementedError
+    def get_session(self) -> Optional[requests.Session]:
+        """
+        현재 세션을 반환합니다.
+
+        Returns:
+            Optional[requests.Session]: 현재 세션 객체, 없으면 None
+        """
+        return self._session

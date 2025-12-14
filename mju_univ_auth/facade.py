@@ -92,9 +92,22 @@ class MjuUnivAuth:
         
         return self
 
-    def is_logged_in(self) -> bool:
-        """현재 세션이 유효한지 확인"""
-        return self._session is not None
+    def is_logged_in(self, service: str = 'msi') -> bool:
+        """
+        현재 로그인 상태인지 확인합니다.
+        
+        Returns:
+            bool: 로그인 상태 여부
+        """
+        if self._session is None:
+            return False
+        
+        authenticator = StandardAuthenticator(
+            user_id=self._user_id,
+            user_pw=self._user_pw,
+            verbose=self._verbose
+        )
+        return authenticator.is_session_valid(self._session, service)
 
     def get_session(self) -> MjuUnivAuthResult[requests.Session]:
         """

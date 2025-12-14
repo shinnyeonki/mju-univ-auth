@@ -13,13 +13,14 @@
 
 1. [목적](#1-목적)
 2. [설치](#2-설치)
-3. [기본 사용법 (고수준 API)](#3-기본-사용법-고수준-api)
-4. [고급 사용법 (저수준 API)](#4-고급-사용법-저수준-api)
-5. [반환값 구조 (MjuUnivAuthResult)](#5-반환값-구조-mjuunivauthresult)
-6. [데이터 모델](#6-데이터-모델)
-7. [지원 서비스](#7-지원-서비스)
-8. [기술적 설명](#8-기술적-설명)
-9. [이종 언어를 위한 API 서버](#9-이종-언어를-위한-api-서버)
+3. [지원 서비스](#3-지원-서비스)
+4. [기본 사용법 (고수준 API)](#4-기본-사용법-고수준-api)
+5. [고급 사용법 (저수준 API)](doc/raw_usage.md)
+6. [반환값 구조 (MjuUnivAuthResult)](#6-반환값-구조-mjuunivauthresult)
+7. [성공 시 데이터 필드 내용](#7-성공-시-데이터-필드-내용)
+8. [동시성 사용 팁](doc/concurrent_usage.md)
+9. [기술적 설명](#9-기술적-설명)
+10. [이종 언어를 위한 API 서버](#10-이종-언어를-위한-api-서버)
 
 ---
 
@@ -43,20 +44,41 @@ pip install mju-univ-auth
 
 ---
 
+## 3. 지원 서비스
+
+`login()` 메서드의 `service` 파라미터로 다양한 서비스에 로그인할 수 있습니다. 각 서비스는 고유한 단축 문자열(코드명)을 사용하여 지정합니다:
+
+| 서비스 | 코드명 | 설명 |
+|--------|--------|------|
+| 명지대 통합 포털 | `"main"` | 기본 포털 |
+| 학사행정시스템 (MSI) | `"msi"` | 학생카드, 성적, 수강신청 등 |
+| LMS (LearnUs) | `"lms"` | 강의 자료, 과제 |
+| 캡스톤/현장실습 | `"myicap"` | MyiCAP |
+| 인턴십 시스템 | `"intern"` | 인턴십 관리 |
+| IPP (산업연계) | `"ipp"` | 산업연계 프로그램 |
+| U-CHECK | `"ucheck"` | 출석 확인 |
+
+```python
+# 예: LMS 로그인 후 세션 획득
+result = MjuUnivAuth("학번", "비밀번호").login("lms").get_session()
+```
+
+---
+
 ### 현 상황
 현재 이 라이브러리는
-- 명지대 메인 페이지 세션
-- 학사행정시스템(MSI)
-- LMS
-- MyiCAP
-- 인턴십 시스템
-- IPP
-- U-CHECK
+- 명지대 메인 페이지 세션 => `main`
+- 학사행정시스템(MSI) => `msi`
+- LMS => `lms`
+- MyiCAP => `myicap`
+- 인턴십 시스템 => `intern`
+- IPP => `ipp`
+- U-CHECK => `ucheck`
 명지대 하위 서비스들의 로그인된 세션을 얻을 수 있으며
 
-로그인된 MSI 세션을 통해 학생카드 정보와 학적변동내역을 조회할 수 있습니다.
+특히 로그인된 MSI 세션을 통해서는 학생카드 정보와 학적변동내역을 조회할 수 있습니다.
 
-## 3. 기본 사용법 (고수준 API)
+## 4. 기본 사용법 (고수준 API)
 
 `MjuUnivAuth` 클래스는 복잡한 내부 로직(세션 관리)을 숨기고 간단한 API를 제공합니다.
 
@@ -149,87 +171,11 @@ MJU_PW=비밀번호
 
 ---
 
-## 4. 고급 사용법 (저수준 API)
+## 5. 고급 사용법 (저수준 API)
 
-저수준 API는 개별 컴포넌트를 직접 제어해야 할 때 사용합니다. 스크립트 개발이나 디버깅 시 유용합니다.
+[고급 사용법 상세](doc/raw_usage.md)
 
-### 4.1. StandardAuthenticator로 세션 획득
-
-`StandardAuthenticator` 클래스는 SSO 로그인만을 담당합니다:
-
-```python
-from mju_univ_auth import StandardAuthenticator
-
-# 인증 객체 생성
-authenticator = StandardAuthenticator(
-    user_id="학번",
-    user_pw="비밀번호",
-    verbose=True
-)
-
-# 로그인 수행
-result = authenticator.login(service='msi')
-
-if result.success:
-    session = result.data  # requests.Session 객체
-    print("로그인 성공!")
-else:
-    print(f"로그인 실패: {result.error_code} - {result.error_message}")
-```
-
-### 4.2. StudentCardFetcher로 학생카드 조회
-
-`StudentCardFetcher`는 이미 로그인된 세션을 받아 학생카드 정보를 조회합니다:
-
-```python
-from mju_univ_auth import StandardAuthenticator, StudentCardFetcher
-
-# 1. 먼저 세션 획득
-authenticator = StandardAuthenticator("학번", "비밀번호")
-login_result = authenticator.login('msi')
-
-if not login_result.success:
-    print(f"로그인 실패: {login_result.error_message}")
-    exit()
-
-session = login_result.data
-
-# 2. Fetcher로 학생카드 조회
-fetcher = StudentCardFetcher(
-    session=session,
-    user_pw="비밀번호",  # 2차 인증에 필요
-    verbose=True
-)
-result = fetcher.fetch()
-
-if result.success:
-    card = result.data
-    card.print_summary()  # 정보 요약 출력
-```
-
-### 4.3. StudentChangeLogFetcher로 학적변동내역 조회
-
-```python
-from mju_univ_auth import StandardAuthenticator, StudentChangeLogFetcher
-
-# 1. 세션 획득
-authenticator = StandardAuthenticator("학번", "비밀번호")
-login_result = authenticator.login('msi')
-session = login_result.data
-
-# 2. 학적변동내역 조회 (2차 인증이 불필요 하므로 비밀번호를 넘길 필요가 없습니다)
-fetcher = StudentChangeLogFetcher(
-    session=session,
-    verbose=True
-)
-result = fetcher.fetch()
-
-if result.success:
-    log = result.data
-    log.print_summary()
-```
-
-## 5. 반환값 구조 (MjuUnivAuthResult)
+## 6. 반환값 구조 (MjuUnivAuthResult)
 
 모든 API 호출은 예외를 발생시키지 않고 `MjuUnivAuthResult` 객체를 반환합니다.  
 이 설계는 서비스 개발 시 오류를 "정상적인 비즈니스 로직"으로 처리할 수 있게 합니다.
@@ -324,101 +270,21 @@ if not result:
 
 ---
 
-## 6. 데이터 모델
+## 7. 성공 시 데이터 필드 내용
 
-### 6.1. StudentCard (학생카드)
+성공 시 `result.data` 필드에 담기는 데이터 타입은 다음과 같습니다:
 
-`get_student_card()` 호출 시 `result.data`에 담기는 데이터 클래스입니다.
-
-```python
-@dataclass
-class StudentCard:
-    # 기본 정보
-    student_id: str           # 학번
-    name_korean: str          # 한글성명
-    name_english_first: str   # 영문성명(성)
-    name_english_last: str    # 영문성명(이름)
-    
-    # 학적 정보
-    grade: str                # 학년
-    status: str               # 학적상태 (재학, 휴학 등)
-    department: str           # 학부(과)
-    advisor: str              # 상담교수
-    design_advisor: str       # 학생설계전공지도교수
-    
-    # 연락처 정보
-    phone: str                # 전화번호
-    mobile: str               # 휴대폰
-    email: str                # 이메일
-    
-    # 주소 정보
-    current_zip: str          # 현거주지 우편번호
-    current_address1: str     # 현거주지 주소1
-    current_address2: str     # 현거주지 주소2
-    registered_zip: str       # 주민등록 우편번호
-    registered_address1: str  # 주민등록 주소1
-    registered_address2: str  # 주민등록 주소2
-    
-    # 기타
-    photo_base64: str         # 사진 (Base64 인코딩)
-    focus_newsletter: bool    # 명지포커스 수신여부
-    
-    # 계산된 속성
-    @property
-    def name_english(self) -> str: ...      # 영문 성명 전체
-    @property
-    def current_address(self) -> str: ...   # 현거주지 전체 주소
-    @property
-    def registered_address(self) -> str: ...# 주민등록 전체 주소
-    
-    # 메서드
-    def to_dict(self) -> Dict: ...          # 딕셔너리로 변환
-    def print_summary(self) -> None: ...    # 정보 요약 출력
-```
-
-### 6.2. StudentChangeLog (학적변동내역)
-
-`get_student_changelog()` 호출 시 `result.data`에 담기는 데이터 클래스입니다.
-
-```python
-@dataclass
-class StudentChangeLog:
-    student_id: str           # 학번
-    name: str                 # 성명
-    status: str               # 학적상태
-    grade: str                # 학년
-    completed_semesters: str  # 이수학기
-    department: str           # 학부(과)
-    
-    # 메서드
-    def to_dict(self) -> Dict: ...       # 딕셔너리로 변환
-    def print_summary(self) -> None: ... # 정보 요약 출력
-```
+- **StudentCard**: 학생카드 정보 (학번, 이름, 학과 등)
+- **StudentChangeLog**: 학적변동내역 (학적상태, 이수학기 등)
+- **Session**: requests.Session 객체 (세션 획득 시)
 
 ---
 
-## 7. 지원 서비스
+## 8. 동시성 사용 팁
 
-`login()` 메서드의 `service` 파라미터로 다양한 서비스에 로그인할 수 있습니다:
+[동시성 사용 팁 상세](doc/concurrent_usage.md)
 
-| 서비스 | 코드명 | 설명 |
-|--------|--------|------|
-| 명지대 통합 포털 | `"main"` | 기본 포털 |
-| 학사행정시스템 (MSI) | `"msi"` | 학생카드, 성적, 수강신청 등 |
-| LMS (LearnUs) | `"lms"` | 강의 자료, 과제 |
-| 캡스톤/현장실습 | `"myicap"` | MyiCAP |
-| 인턴십 시스템 | `"intern"` | 인턴십 관리 |
-| IPP (산업연계) | `"ipp"` | 산업연계 프로그램 |
-| U-CHECK | `"ucheck"` | 출석 확인 |
-
-```python
-# 예: LMS 로그인 후 세션 획득
-result = MjuUnivAuth("학번", "비밀번호").login("lms").get_session()
-```
-
----
-
-## 8. 기술적 설명
+## 9. 기술적 설명
 
 2025년 11월 27일부로 명지대학교의 여러 서비스들이 1개의 로그인 방식(서버측 Spring Security 예상)으로 통합되었습니다.
 
@@ -437,7 +303,7 @@ curl --location --request POST 'https://sso1.mju.ac.kr/mju/userCheck.do' \
 
 ---
 
-## 9. 이종 언어를 위한 API 서버
+## 10. 이종 언어를 위한 API 서버
 
 Python이 아닌 다른 언어에서 사용하려면 API 서버를 활용하세요.
 
