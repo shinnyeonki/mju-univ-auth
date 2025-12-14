@@ -58,48 +58,46 @@ pip install mju-univ-auth
 
 ## 3. 기본 사용법 (고수준 API)
 
-`MjuUnivAuth` 클래스는 복잡한 내부 로직(세션 관리, 자동 로그인 등)을 숨기고 간단한 API를 제공합니다.
+`MjuUnivAuth` 클래스는 복잡한 내부 로직(세션 관리)을 숨기고 간단한 API를 제공합니다.
 
-### 3.1. 학생카드 정보 조회
+**중요**: 모든 데이터 조회(`get_student_card`, `get_student_changelog` 등) 전에 반드시 `.login()` 메서드를 호출하여 세션을 초기화해야 합니다.
+
+### 3.1. 데이터 조회 (학생카드, 학적변동내역)
+
+`.login()`을 호출하여 인증을 수행한 뒤, 이어서 학생 정보 조회 메서드를 체이닝(chaining)할 수 있습니다.
 
 ```python
 from mju_univ_auth import MjuUnivAuth
 
-# 방법 1: 체이닝으로 로그인 후 조회
-result = MjuUnivAuth(user_id="학번", user_pw="비밀번호").login("msi").get_student_card()
+# 1. MjuUnivAuth 인스턴스 생성
+auth = MjuUnivAuth(user_id="학번", user_pw="비밀번호")
 
-if result.success:
-    card = result.data
+# 2. 'msi' 서비스로 로그인 후 학생카드 조회
+card_result = auth.login("msi").get_student_card()
+
+if card_result.success:
+    card = card_result.data
     print(f"이름: {card.name_korean}")
     print(f"학번: {card.student_id}")
     print(f"학과: {card.department}")
-    print(f"학년: {card.grade}")
-    print(f"학적상태: {card.status}")
 else:
-    print(f"조회 실패: {result.error_message}")
+    print(f"학생카드 조회 실패: {card_result.error_message}")
 
-# 방법 2: 자동 로그인 (login 호출 생략 가능)
-result = MjuUnivAuth("학번", "비밀번호").get_student_card()
-```
+# 3. 이미 로그인된 세션을 사용하여 학적변동내역 조회
+# 별도로 login()을 다시 호출할 필요가 없습니다.
+changelog_result = auth.get_student_changelog()
 
-### 3.2. 학적변동내역 조회
-
-```python
-from mju_univ_auth import MjuUnivAuth
-
-result = MjuUnivAuth(user_id="학번", user_pw="비밀번호").login("msi").get_student_changelog()
-
-if result.success:
-    log = result.data
-    print(f"학번: {log.student_id}")
-    print(f"이름: {log.name}")
+if changelog_result.success:
+    log = changelog_result.data
     print(f"학적상태: {log.status}")
     print(f"이수학기: {log.completed_semesters}")
+else:
+    print(f"학적변동내역 조회 실패: {changelog_result.error_message}")
 ```
 
-### 3.3. 세션 획득
+### 3.2. 세션 획득
 
-다른 서비스(LMS, MyiCAP 등)에 로그인하여 세션만 얻고 싶을 때:
+다른 서비스(LMS, MyiCAP 등)에 로그인하여 세션만 얻고 싶을 때 사용법은 동일합니다.
 
 ```python
 from mju_univ_auth import MjuUnivAuth
@@ -113,7 +111,7 @@ if result.success:
     response = session.get("https://lms.mju.ac.kr/...")
 ```
 
-### 3.4. 상세 로그 출력
+### 3.3. 상세 로그 출력
 
 디버깅을 위해 상세 로그를 활성화할 수 있습니다:
 
@@ -122,10 +120,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 auth = MjuUnivAuth("학번", "비밀번호", verbose=True)
-result = auth.get_student_card()
+result = auth.login("msi").get_student_card()
 ```
 
-### 3.5. 환경 변수 사용 (권장)
+### 3.4. 환경 변수 사용 (권장)
 
 보안을 위해 환경 변수나 `.env` 파일을 사용하는 것을 권장합니다:
 
@@ -140,7 +138,7 @@ auth = MjuUnivAuth(
     user_id=os.getenv('MJU_ID'),
     user_pw=os.getenv('MJU_PW')
 )
-result = auth.get_student_card()
+result = auth.login("msi").get_student_card()
 ```
 
 `.env` 파일 예시:
@@ -155,15 +153,15 @@ MJU_PW=비밀번호
 
 저수준 API는 개별 컴포넌트를 직접 제어해야 할 때 사용합니다. 스크립트 개발이나 디버깅 시 유용합니다.
 
-### 4.1. Authenticator로 세션 획득
+### 4.1. StandardAuthenticator로 세션 획득
 
-`Authenticator` 클래스는 SSO 로그인만을 담당합니다:
+`StandardAuthenticator` 클래스는 SSO 로그인만을 담당합니다:
 
 ```python
-from mju_univ_auth import Authenticator
+from mju_univ_auth import StandardAuthenticator
 
 # 인증 객체 생성
-authenticator = Authenticator(
+authenticator = StandardAuthenticator(
     user_id="학번",
     user_pw="비밀번호",
     verbose=True
@@ -184,10 +182,10 @@ else:
 `StudentCardFetcher`는 이미 로그인된 세션을 받아 학생카드 정보를 조회합니다:
 
 ```python
-from mju_univ_auth import Authenticator, StudentCardFetcher
+from mju_univ_auth import StandardAuthenticator, StudentCardFetcher
 
 # 1. 먼저 세션 획득
-authenticator = Authenticator("학번", "비밀번호")
+authenticator = StandardAuthenticator("학번", "비밀번호")
 login_result = authenticator.login('msi')
 
 if not login_result.success:
@@ -212,10 +210,10 @@ if result.success:
 ### 4.3. StudentChangeLogFetcher로 학적변동내역 조회
 
 ```python
-from mju_univ_auth import Authenticator, StudentChangeLogFetcher
+from mju_univ_auth import StandardAuthenticator, StudentChangeLogFetcher
 
 # 1. 세션 획득
-authenticator = Authenticator("학번", "비밀번호")
+authenticator = StandardAuthenticator("학번", "비밀번호")
 login_result = authenticator.login('msi')
 session = login_result.data
 
