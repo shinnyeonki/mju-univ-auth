@@ -79,8 +79,8 @@ def test_high_level_api(user_id: str, user_pw: str) -> bool:
     auth = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True)
     
     # 1-1. 학생카드 조회 (자동 로그인)
-    print(f"{Colors.BOLD}{Colors.BLUE}[Step 1-1] 학생카드 조회 (자동 로그인){Colors.END}")
-    card_result = auth.get_student_card()
+    print(f"{Colors.BOLD}{Colors.BLUE}[Step 1-1] 학생카드 조회{Colors.END}")
+    card_result = auth.login("msi").get_student_card()
     
     if card_result.success:
         student_card = card_result.data
