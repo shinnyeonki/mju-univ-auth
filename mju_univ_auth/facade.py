@@ -107,7 +107,8 @@ class MjuUnivAuth:
             user_pw=self._user_pw,
             verbose=self._verbose
         )
-        return authenticator.is_session_valid(self._session, service)
+        authenticator._session = self._session  # 세션 설정
+        return authenticator.is_session_valid(service)
 
     def get_session(self) -> MjuUnivAuthResult[requests.Session]:
         """

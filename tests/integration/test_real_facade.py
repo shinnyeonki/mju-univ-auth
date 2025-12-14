@@ -14,6 +14,7 @@ requires_creds = pytest.mark.skipif(not USER_ID or not USER_PW, reason="MJU_ID a
 def test_real_get_student_card():
     """Tests fetching the student card with real credentials."""
     auth = MjuUnivAuth(user_id=USER_ID, user_pw=USER_PW)
+    auth.login('msi')
     result = auth.get_student_card()
 
     assert result.success, f"Failed to get student card: {result.error_message}"
@@ -24,6 +25,7 @@ def test_real_get_student_card():
 def test_real_get_student_changelog():
     """Tests fetching the student changelog with real credentials."""
     auth = MjuUnivAuth(user_id=USER_ID, user_pw=USER_PW)
+    auth.login('msi')
     result = auth.get_student_changelog()
 
     assert result.success, f"Failed to get student changelog: {result.error_message}"
