@@ -100,6 +100,19 @@ class BaseAuthenticator:
                 error_message=str(e)
             )
 
+    def is_session_valid(self, service: str = 'msi') -> bool:
+        """
+        현재 세션이 유효한지 확인합니다.
+        자식 클래스에서 구현해야 합니다.
+
+        Args:
+            service: 확인할 서비스 (기본값: 'msi')
+
+        Returns:
+            bool: 세션 유효 여부
+        """
+        raise NotImplementedError
+
     def _execute_login(self, session: requests.Session, service: str):
         """자식 클래스 구현부: 실패 시 반드시 커스텀 예외를 raise 해야 함"""
         raise NotImplementedError
