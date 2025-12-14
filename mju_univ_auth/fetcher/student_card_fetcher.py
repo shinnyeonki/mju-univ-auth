@@ -8,11 +8,11 @@ import re
 import logging
 import requests
 
-from .base_fetcher import BaseFetcher
-from .config import SERVICES, TIMEOUT_CONFIG
-from .infrastructure.parser import HTMLParser
-from .domain.student_card import StudentCard
-from .exceptions import (
+from ..fetcher.base_fetcher import BaseFetcher
+from ..config import SERVICES, TIMEOUT_CONFIG
+from ..infrastructure.parser import HTMLParser
+from ..domain.student_card import StudentCard
+from ..exceptions import (
     NetworkError,
     PageParsingError,
     InvalidCredentialsError,

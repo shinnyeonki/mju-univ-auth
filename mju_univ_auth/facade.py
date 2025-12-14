@@ -8,9 +8,9 @@ from typing import Optional
 import logging
 import requests
 
-from .authenticator import Authenticator
-from .student_card_fetcher import StudentCardFetcher
-from .student_change_log_fetcher import StudentChangeLogFetcher
+from .authenticator.standard_authenticator import StandardAuthenticator
+from .fetcher.student_card_fetcher import StudentCardFetcher
+from .fetcher.student_change_log_fetcher import StudentChangeLogFetcher
 from .domain.student_card import StudentCard
 from .domain.student_changelog import StudentChangeLog
 from .results import MjuUnivAuthResult, ErrorCode
@@ -76,7 +76,7 @@ class MjuUnivAuth:
         Returns:
             self (메서드 체이닝 지원)
         """
-        authenticator = Authenticator(
+        authenticator = StandardAuthenticator(
             user_id=self._user_id,
             user_pw=self._user_pw,
             verbose=self._verbose
@@ -121,7 +121,7 @@ class MjuUnivAuth:
 
     def _create_fresh_session(self, service: str) -> MjuUnivAuthResult[requests.Session]:
         """요청마다 독립 세션을 생성해 로그인한다."""
-        authenticator = Authenticator(
+        authenticator = StandardAuthenticator(
             user_id=self._user_id,
             user_pw=self._user_pw,
             verbose=self._verbose,

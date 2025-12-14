@@ -1,106 +1,44 @@
 """
-인증 모듈
-=========
-Authenticator 클래스를 정의합니다.
+표준 인증 모듈
+===============
+StandardAuthenticator 클래스를 정의합니다.
 """
-
 import time
 from typing import Optional
 from urllib.parse import urlparse, urljoin
 import requests
-
 import logging
 
-from .results import MjuUnivAuthResult, ErrorCode
-from .config import SERVICES, TIMEOUT_CONFIG, DEFAULT_HEADERS
-from .infrastructure.parser import HTMLParser
-from .infrastructure.crypto import generate_session_key, encrypt_with_rsa, encrypt_with_aes
-from .exceptions import (
+from .base_authenticator import BaseAuthenticator
+from ..config import SERVICES, TIMEOUT_CONFIG, DEFAULT_HEADERS
+from ..infrastructure.parser import HTMLParser
+from ..infrastructure.crypto import generate_session_key, encrypt_with_rsa, encrypt_with_aes
+from ..exceptions import (
     MjuUnivAuthError,
     InvalidCredentialsError,
     NetworkError,
     ServiceNotFoundError,
     PageParsingError,
-    SessionExpiredError,
 )
-from .utils import mask_sensitive
+from ..utils import mask_sensitive
 
 logger = logging.getLogger(__name__)
 
 
-class Authenticator:
-    """명지대학교 SSO 인증을 처리하는 클래스"""
-    
+class StandardAuthenticator(BaseAuthenticator):
+    """명지대학교 표준 SSO 인증을 처리하는 클래스"""
+
     def __init__(
         self,
         user_id: str,
         user_pw: str,
         verbose: bool = False,
     ):
-        """
-        Args:
-            user_id: 학번/교번
-            user_pw: 비밀번호
-            verbose: 상세 로그 출력 여부
-        """
-        self._user_id = user_id
-        self._user_pw = user_pw
-        self._verbose = verbose
-
+        super().__init__(user_id, user_pw, verbose)
         # 로그인 과정에서 획득한 데이터
         self._public_key: Optional[str] = None
         self._csrf_token: Optional[str] = None
         self._form_action: Optional[str] = None
-        self._session: Optional[requests.Session] = None
-
-    def login(self, service: str = 'msi') -> MjuUnivAuthResult[requests.Session]:
-        """
-        SSO 로그인 수행
-        
-        Args:
-            service: 로그인할 서비스 (기본값: 'msi')
-        
-        Returns:
-            MjuUnivAuthResult[requests.Session]: 로그인 결과
-        """
-        session = requests.Session()
-        try:
-            self._execute_login(session, service)
-            
-            return MjuUnivAuthResult(
-                request_succeeded=True,
-                credentials_valid=True,
-                data=session
-            )
-
-        except InvalidCredentialsError as e:
-            return MjuUnivAuthResult(
-                request_succeeded=True,
-                credentials_valid=False,
-                error_code=ErrorCode.AUTH_FAILED,
-                error_message=str(e)
-            )
-        except NetworkError as e:
-            return MjuUnivAuthResult(
-                request_succeeded=False,
-                credentials_valid=False,
-                error_code=ErrorCode.NETWORK_ERROR,
-                error_message=str(e)
-            )
-        except ServiceNotFoundError as e:
-            return MjuUnivAuthResult(
-                request_succeeded=False,
-                credentials_valid=False,
-                error_code=ErrorCode.SERVICE_NOT_FOUND,
-                error_message=str(e)
-            )
-        except Exception as e:
-            return MjuUnivAuthResult(
-                request_succeeded=False,
-                credentials_valid=False,
-                error_code=ErrorCode.UNKNOWN,
-                error_message=str(e)
-            )
 
     def _execute_login(self, session: requests.Session, service: str):
         """

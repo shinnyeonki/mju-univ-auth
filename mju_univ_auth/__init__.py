@@ -22,13 +22,14 @@ MSI(My iWeb) 서비스에 접속하여 학생 정보를 조회하는 모듈
 # 메인 Facade 클래스
 from .facade import MjuUnivAuth
 
-# 기반 클래스
-from .authenticator import Authenticator
-from .base_fetcher import BaseFetcher
+# Authenticator 클래스
+from .authenticator.base_authenticator import BaseAuthenticator
+from .authenticator.standard_authenticator import StandardAuthenticator
 
 # Fetcher 클래스
-from .student_card_fetcher import StudentCardFetcher
-from .student_change_log_fetcher import StudentChangeLogFetcher
+from .fetcher.base_fetcher import BaseFetcher
+from .fetcher.student_card_fetcher import StudentCardFetcher
+from .fetcher.student_change_log_fetcher import StudentChangeLogFetcher
 
 # 도메인 모델
 from .domain import StudentCard, StudentChangeLog
@@ -51,7 +52,8 @@ __all__ = [
     'MjuUnivAuth',
     
     # 기반 클래스
-    'Authenticator',
+    'BaseAuthenticator',
+    'StandardAuthenticator',
     'BaseFetcher',
     
     # Fetcher 클래스

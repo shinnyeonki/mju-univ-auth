@@ -1,10 +1,14 @@
 import pytest
 import requests
 
-from mju_univ_auth.student_card_fetcher import StudentCardFetcher
-from mju_univ_auth.domain.student_card import StudentCard
-from mju_univ_auth.exceptions import PageParsingError, NetworkError, InvalidCredentialsError
-from mju_univ_auth.results import ErrorCode
+from mju_univ_auth import (
+    StudentCardFetcher,
+    StudentCard,
+    PageParsingError,
+    NetworkError,
+    InvalidCredentialsError,
+    ErrorCode,
+)
 
 
 class DummyResponse:
@@ -21,11 +25,11 @@ class DummySession:
 
     def post(self, url, data=None, headers=None, timeout=None):
         self.last_post = (url, data, headers)
-        return DummyResponse(text=self._post_response_text if hasattr(self, '_post_response_text') else '', url=url)
+        return DummyResponse(text=getattr(self, '_post_response_text', ''), url=url)
 
     def get(self, url, timeout=None):
         self.last_get = (url,)
-        return DummyResponse(text=self._get_response_text if hasattr(self, '_get_response_text') else '', url=url)
+        return DummyResponse(text=getattr(self, '_get_response_text', ''), url=url)
 
 
 @pytest.fixture

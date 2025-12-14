@@ -1,9 +1,12 @@
 import pytest
 
-from mju_univ_auth.student_change_log_fetcher import StudentChangeLogFetcher
-from mju_univ_auth.domain.student_changelog import StudentChangeLog
-from mju_univ_auth.exceptions import PageParsingError, NetworkError
-from mju_univ_auth.results import ErrorCode
+from mju_univ_auth import (
+    StudentChangeLogFetcher,
+    StudentChangeLog,
+    PageParsingError,
+    NetworkError,
+    ErrorCode,
+)
 
 
 class DummySession:

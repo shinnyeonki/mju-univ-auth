@@ -8,7 +8,7 @@
    - 학생카드 조회
    - 학적변동내역 조회
 
-2. 저수준 API (Authenticator) 테스트
+2. 저수준 API (StandardAuthenticator) 테스트
    - 모든 서비스 로그인 테스트 (main, msi, lms, portal, myicap, intern, ipp, ucheck)
 
 3. Fetcher 직접 사용 테스트
@@ -24,9 +24,9 @@ from typing import List, Tuple
 from dotenv import load_dotenv
 
 from .facade import MjuUnivAuth
-from .authenticator import Authenticator
-from .student_card_fetcher import StudentCardFetcher
-from .student_change_log_fetcher import StudentChangeLogFetcher
+from .authenticator.standard_authenticator import StandardAuthenticator
+from .fetcher.student_card_fetcher import StudentCardFetcher
+from .fetcher.student_change_log_fetcher import StudentChangeLogFetcher
 from .config import SERVICES
 
 # 로깅 설정
@@ -59,7 +59,7 @@ def print_banner():
         "║                                                                      ║\n"
         "║  이 프로그램은 모든 API를 테스트합니다.                                   ║\n"
         "║  - 고수준 API: MjuUnivAuth                                            ║\n"
-        "║  - 저수준 API: Authenticator, Fetchers                                ║\n"
+        "║  - 저수준 API: StandardAuthenticator, Fetchers                        ║\n"
         "║                                                                      ║\n"
         "║  https://github.com/shinnyeonki/mju-univ-auth                        ║\n"
         "╚══════════════════════════════════════════════════════════════════════╝\n"
@@ -113,10 +113,10 @@ def test_high_level_api(user_id: str, user_pw: str) -> bool:
 
 def test_all_services_login(user_id: str, user_pw: str) -> List[Tuple[str, bool, str]]:
     """
-    저수준 API (Authenticator) - 모든 서비스 로그인 테스트
+    저수준 API (StandardAuthenticator) - 모든 서비스 로그인 테스트
     """
     print(f"\n{Colors.HEADER}{'='*70}")
-    print(" 2. 저수준 API (Authenticator) - 모든 서비스 로그인 테스트")
+    print(" 2. 저수준 API (StandardAuthenticator) - 모든 서비스 로그인 테스트")
     print(f"{'='*70}{Colors.END}\n")
     
     results = []
@@ -124,13 +124,13 @@ def test_all_services_login(user_id: str, user_pw: str) -> List[Tuple[str, bool,
     for service_name, service_config in SERVICES.items():
         print(f"{Colors.BOLD}{Colors.BLUE}[{service_name}] {service_config.name} 로그인 테스트{Colors.END}")
         
-        authenticator = Authenticator(
+        standard_authenticator = StandardAuthenticator(
             user_id=user_id,
             user_pw=user_pw,
             verbose=True
         )
         
-        login_result = authenticator.login(service_name)
+        login_result = standard_authenticator.login(service_name)
         
         if login_result.success:
             print(f"{Colors.GREEN}✓ {service_config.name} 로그인 성공!{Colors.END}")
@@ -156,8 +156,8 @@ def test_fetchers_with_session(user_id: str, user_pw: str) -> bool:
     
     # 3-1. MSI 로그인으로 세션 획득
     print(f"{Colors.BOLD}{Colors.BLUE}[Step 3-1] MSI 로그인으로 세션 획득{Colors.END}")
-    authenticator = Authenticator(user_id=user_id, user_pw=user_pw, verbose=False)
-    login_result = authenticator.login('msi')
+    standard_authenticator = StandardAuthenticator(user_id=user_id, user_pw=user_pw, verbose=False)
+    login_result = standard_authenticator.login('msi')
     
     if not login_result.success:
         print(f"{Colors.RED}✗ MSI 로그인 실패 - Fetcher 테스트 불가{Colors.END}")

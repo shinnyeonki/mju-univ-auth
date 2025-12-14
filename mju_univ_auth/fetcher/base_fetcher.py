@@ -7,8 +7,8 @@
 from typing import Generic, TypeVar
 import requests
 
-from .results import MjuUnivAuthResult, ErrorCode
-from .exceptions import (
+from ..results import MjuUnivAuthResult, ErrorCode
+from ..exceptions import (
     NetworkError,
     PageParsingError,
     InvalidCredentialsError,

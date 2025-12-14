@@ -7,11 +7,11 @@ MSI 서비스에서 학적변동내역을 조회합니다.
 import logging
 import requests
 
-from .base_fetcher import BaseFetcher
-from .config import SERVICES, TIMEOUT_CONFIG
-from .infrastructure.parser import HTMLParser
-from .domain.student_changelog import StudentChangeLog
-from .exceptions import (
+from ..fetcher.base_fetcher import BaseFetcher
+from ..config import SERVICES, TIMEOUT_CONFIG
+from ..infrastructure.parser import HTMLParser
+from ..domain.student_changelog import StudentChangeLog
+from ..exceptions import (
     NetworkError,
     PageParsingError,
     SessionExpiredError,
