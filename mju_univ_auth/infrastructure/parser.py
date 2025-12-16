@@ -134,13 +134,15 @@ class HTMLParser:
         # var errorMsg = "..." 패턴
         var_error_match = re.search(r'var errorMsg = "([^"]+)"', html)
         if var_error_match:
-            return var_error_match.group(1)
-        
+            message = var_error_match.group(1)
+            return message.encode('latin-1').decode('unicode_escape')
+
         # alert() 패턴
         alert_match = re.search(r"alert\(['\"](.+?)['\"]\)", html)
         if alert_match:
-            return alert_match.group(1)
-        
+            message = alert_match.group(1)
+            return message.encode('latin-1').decode('unicode_escape')
+
         return None
     
     @classmethod

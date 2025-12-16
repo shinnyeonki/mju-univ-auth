@@ -20,7 +20,10 @@ authenticator = StandardAuthenticator(
 result = authenticator.login(service='msi')
 
 if result.success:
-    session = result.data  # requests.Session 객체
+    # 로그인 성공 시 authenticator 인스턴스에 세션이 저장됩니다.
+    session = authenticator.session  # requests.Session 객체
+    # result.data로도 세션을 가져올 수 있습니다.
+    # session = result.data
     print("로그인 성공!")
 else:
     print(f"로그인 실패: {result.error_code} - {result.error_message}")
@@ -41,7 +44,8 @@ if not login_result.success:
     print(f"로그인 실패: {login_result.error_message}")
     exit()
 
-session = login_result.data
+# authenticator 인스턴스에서 바로 세션을 가져와 사용합니다.
+session = authenticator.session
 
 # 2. Fetcher로 학생카드 조회
 fetcher = StudentCardFetcher(
@@ -64,7 +68,12 @@ from mju_univ_auth import StandardAuthenticator, StudentChangeLogFetcher
 # 1. 세션 획득
 authenticator = StandardAuthenticator("학번", "비밀번호")
 login_result = authenticator.login('msi')
-session = login_result.data
+
+if not login_result.success:
+    print(f"로그인 실패: {login_result.error_message}")
+    exit()
+
+session = authenticator.session
 
 # 2. 학적변동내역 조회 (2차 인증이 불필요 하므로 비밀번호를 넘길 필요가 없습니다)
 fetcher = StudentChangeLogFetcher(
