@@ -4,7 +4,7 @@ import requests
 from mju_univ_auth import (
     StudentCardFetcher,
     StudentCard,
-    PageParsingError,
+    ParsingError,
     NetworkError,
     InvalidCredentialsError,
     ErrorCode,
@@ -67,9 +67,9 @@ def test_student_card_fetcher_parse_error(monkeypatch, dummy_session):
     monkeypatch.setattr(fetcher, '_get_csrf_token', lambda: setattr(fetcher, '_csrf_token', 'token123'))
     monkeypatch.setattr(fetcher, '_access_student_card_page', lambda: '<html></html>')
 
-    # 파싱 시 PageParsingError가 발생하는 상황을 모의합니다
+    # 파싱 시 ParsingError가 발생하는 상황을 모의합니다
     def raising_parse(html):
-        raise PageParsingError('Unable to parse', field='student_id')
+        raise ParsingError('Unable to parse', field='student_id')
 
     monkeypatch.setattr(fetcher, '_parse_student_card', raising_parse)
 

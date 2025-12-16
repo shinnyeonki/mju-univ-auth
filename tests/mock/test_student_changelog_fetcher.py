@@ -3,7 +3,7 @@ import pytest
 from mju_univ_auth import (
     StudentChangeLogFetcher,
     StudentChangeLog,
-    PageParsingError,
+    ParsingError,
     NetworkError,
     ErrorCode,
 )
@@ -51,9 +51,9 @@ def test_student_changelog_fetcher_parse_error(monkeypatch, dummy_session):
     monkeypatch.setattr(fetcher, '_get_csrf_token', lambda: setattr(fetcher, '_csrf_token', 'token'))
     monkeypatch.setattr(fetcher, '_access_changelog_page', lambda: '<html></html>')
 
-    # _parse_changelog가 PageParsingError를 발생시키도록 모의합니다
+    # _parse_changelog가 ParsingError를 발생시키도록 모의합니다
     def raising_parse(html):
-        raise PageParsingError('Parsing failed', field='student_id')
+        raise ParsingError('Parsing failed', field='student_id')
 
     monkeypatch.setattr(fetcher, '_parse_changelog', raising_parse)
 

@@ -60,9 +60,6 @@ class StandardAuthenticator(BaseAuthenticator):
         self._session = session
         self._session.headers.update(DEFAULT_HEADERS)
 
-        if self.is_session_valid(service):
-            raise AlreadyLoggedInError(f"'{service}' 서비스에 이미 로그인되어 있습니다.")
-
         if service not in SERVICES:
             raise ServiceNotFoundError(service, list(SERVICES.keys()))
 

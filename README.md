@@ -48,7 +48,7 @@ pip install mju-univ-auth
 
 `login()` 메서드의 `service` 파라미터로 다양한 서비스에 로그인할 수 있습니다. 각 서비스는 고유한 단축 문자열(코드명)을 사용하여 지정합니다:
 
-| 서비스 | 코드명 | 설명 | 현재 동작 여부 | 관련 클래스 |
+| 서비스 | 코드명 | 설명 | 동작 여부 | 관련 클래스 |
 |--------|--------|------|--------|--------|
 | 명지대 통합 포털 | `"main"` | 기본 포털 | v | `StandardAuthenticator` |
 | 학사행정시스템 (MSI) | `"msi"` | 학생카드, 성적, 수강신청 등 | v | `StandardAuthenticator` |
@@ -62,7 +62,11 @@ pip install mju-univ-auth
 
 ```python
 # 예: LMS 로그인 후 세션 획득
-result = MjuUnivAuth("학번", "비밀번호").login("lms").get_session()
+result = MjuUnivAuth("학번", "비밀번호").login("lms").session
+# 예: MSI 로그인후 학생카드 파싱
+result = MjuUnivAuth("학번", "비밀번호").login("lms").get_student_card()
+# 예: MSI 로그인후 학적 변경 파싱
+result = MjuUnivAuth("학번", "비밀번호").login("lms").get_student_changelog()
 ```
 
 

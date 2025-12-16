@@ -319,21 +319,21 @@ def main():
     
     
     # 각 줄의 시간을 측정
-    # import time
-    # auth = StandardAuthenticator(user_id=user_id, user_pw=user_pw, verbose=True)
-    # start_time = time.time()
-    # msi_session = auth.login('msi')
-    # end_time = time.time()
-    # print(f"msi 서비스 로그인 시간: {end_time - start_time:.4f}초") # 평균 0.8초 내외
+    import time
+    auth = StandardAuthenticator(user_id=user_id, user_pw=user_pw, verbose=True)
+    start_time = time.time()
+    msi_session = auth.login('msi')
+    end_time = time.time()
+    print(f"msi 서비스 로그인 시간: {end_time - start_time:.4f}초") # 평균 0.8초 내외
     
-    # start_time = time.time()
-    # auth.is_session_valid("msi")
-    # end_time = time.time()
-    # print(f"msi 세션 유효성 검사 시간: {end_time - start_time:.4f}초") # 평균 0.3초 내외
+    start_time = time.time()
+    auth.is_session_valid("msi")
+    end_time = time.time()
+    print(f"msi 세션 유효성 검사 시간: {end_time - start_time:.4f}초") # 평균 0.3초 내외
     
     # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_card()
-    result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_changelog()
-    print(result)
+    # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_changelog()
+    # print(result)
 
 
 if __name__ == "__main__":

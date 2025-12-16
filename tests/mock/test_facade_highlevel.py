@@ -12,9 +12,10 @@ from mju_univ_auth import (
 def test_get_student_card_auto_login_success(monkeypatch):
     auth = MjuUnivAuth(user_id='user', user_pw='pw')
 
-    # Set a mock session
+    # Set a mock session and service
     mock_session = object()
     auth._session = mock_session
+    auth._service = 'msi'
 
     # StudentCardFetcher를 모의로 바꿔 예상 결과를 반환하도록 합니다
     expected_card = StudentCard(student_id='20200001', name_korean='홍길동')
@@ -35,21 +36,25 @@ def test_get_student_card_auto_login_success(monkeypatch):
 def test_get_student_card_with_no_login_attempt(monkeypatch):
     auth = MjuUnivAuth(user_id='user2', user_pw='pw2')
     auth._session = None
-    auth._login_result = None
+    auth._login_failed = False
+    auth._login_error = None
 
     result = auth.get_student_card()
 
-    assert result.error_code == ErrorCode.SESSION_EXPIRED
-    assert '세션이 없습니다' in result.error_message
     assert not result.success
+    assert result.error_code == ErrorCode.SESSION_NOT_EXIST
+    assert '세션이 없습니다' in result.error_message
 
 
 def test_get_session_returns_stored_login_result_when_failed(monkeypatch):
     ma = MjuUnivAuth(user_id='user3', user_pw='pw3')
     ma._session = None
-    ma._login_result = MjuUnivAuthResult(request_succeeded=True, credentials_valid=False, error_code=ErrorCode.AUTH_FAILED, error_message='Invalid credentials')
+    ma._login_failed = True
+    ma._login_error = MjuUnivAuthResult(request_succeeded=True, credentials_valid=False, error_code=ErrorCode.AUTH_FAILED, error_message='Invalid credentials')
 
     result = ma.get_session()
+    
+    assert not result.success
     assert result.error_code == ErrorCode.AUTH_FAILED
     assert result.error_message == 'Invalid credentials'
     assert result.credentials_valid is False
@@ -58,9 +63,10 @@ def test_get_session_returns_stored_login_result_when_failed(monkeypatch):
 def test_get_student_changelog_success(monkeypatch):
     auth = MjuUnivAuth(user_id='user', user_pw='pw')
 
-    # Set a mock session
+    # Set a mock session and service
     mock_session = object()
     auth._session = mock_session
+    auth._service = 'msi'
 
     # Mock StudentChangeLogFetcher
     expected_changelog = StudentChangeLog(student_id='20200001', name='홍길동')
