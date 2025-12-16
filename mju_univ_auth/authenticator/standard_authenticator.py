@@ -352,13 +352,6 @@ class StandardAuthenticator(BaseAuthenticator):
 
         html = response.text
 
-        # 로그아웃 버튼이 있으면 세션 유효
-        has_logout = HTMLParser.has_logout_button(html)
-        if has_logout:
-            if self._verbose:
-                logger.info("✓ 세션이 유효합니다. (로그아웃 버튼 확인)")
-            return True
-        
         # 로그인 폼이 있으면 세션 무효
         has_signin_form = HTMLParser.has_signin_form(html)
         if has_signin_form:
@@ -366,6 +359,13 @@ class StandardAuthenticator(BaseAuthenticator):
                 logger.warning("세션이 만료되었거나 유효하지 않습니다. (로그인 폼 확인)")
             return False
 
+        # 로그아웃 버튼이 있으면 세션 유효
+        has_logout = HTMLParser.has_logout_button(html)
+        if has_logout:
+            if self._verbose:
+                logger.info("✓ 세션이 유효합니다. (로그아웃 버튼 확인)")
+            return True
+        
         # 최종 URL에 도달했고 로그인 폼이 없는 경우도 세션 유효
         final_url_reached = self._is_final_url_reached(response.url, service_config.final_url)
         if final_url_reached:

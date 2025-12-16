@@ -177,7 +177,7 @@ class HTMLParser:
     @classmethod
     def has_signin_form(cls, html: str) -> bool:
         """로그인 폼 존재 여부 확인"""
-        return 'signin-form' in html and 'input-password' in html
+        return 'signin-form' in html
     
     @classmethod
     def has_logout_button(cls, html: str) -> bool:
