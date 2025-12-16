@@ -13,7 +13,7 @@ from ..infrastructure.parser import HTMLParser
 from ..domain.student_changelog import StudentChangeLog
 from ..exceptions import (
     NetworkError,
-    PageParsingError,
+    ParsingError,
     SessionExpiredError,
 )
 
@@ -82,7 +82,7 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
         self._csrf_token = HTMLParser.extract_csrf_token(response.text)
 
         if not self._csrf_token:
-            raise PageParsingError("CSRF 토큰을 찾을 수 없습니다.", field="csrf")
+            raise ParsingError("CSRF 토큰을 찾을 수 없습니다.", field="csrf")
 
         if self._verbose:
             logger.debug(f"CSRF Token: {self._csrf_token}")
@@ -134,7 +134,7 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
         fields = HTMLParser.parse_change_log_fields(html)
 
         if '학번' not in fields or not fields['학번']:
-            raise PageParsingError("학적변동내역 정보를 찾을 수 없습니다 (학번 필드 누락).", field="student_id")
+            raise ParsingError("학적변동내역 정보를 찾을 수 없습니다 (학번 필드 누락).", field="student_id")
 
         changelog = StudentChangeLog.from_parsed_fields(fields)
 

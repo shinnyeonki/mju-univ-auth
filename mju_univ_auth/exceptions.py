@@ -49,8 +49,8 @@ class NetworkError(MjuUnivAuthError):
         return " [".join([parts[0], ", ".join(parts[1:]) + "]"]) if len(parts) > 1 else parts[0]
 
 
-class PageParsingError(MjuUnivAuthError):
-    """HTML 파싱 관련 에러"""
+class ParsingError(MjuUnivAuthError):
+    """HTML 등 페이지 파싱 관련 에러"""
     
     def __init__(
         self,
@@ -90,6 +90,28 @@ class SessionExpiredError(MjuUnivAuthError):
         self.redirect_url = redirect_url
 
 
+class SessionNotExistError(MjuUnivAuthError):
+    """로그인 세션이 존재하지 않을 때 발생하는 에러"""
+    
+    def __init__(
+        self,
+        message: str = "세션이 존재하지 않습니다. 먼저 로그인을 수행해야 합니다.",
+        **context
+    ):
+        super().__init__(message, **context)
+
+
+class AlreadyLoggedInError(MjuUnivAuthError):
+    """이미 로그인된 상태에서 다시 로그인을 시도할 때 발생하는 에러"""
+    
+    def __init__(
+        self,
+        message: str = "이미 로그인된 세션입니다.",
+        **context
+    ):
+        super().__init__(message, **context)
+
+
 class ServiceNotFoundError(MjuUnivAuthError):
     """요청한 서비스를 찾을 수 없을 때 발생하는 에러"""
     
@@ -105,3 +127,16 @@ class ServiceNotFoundError(MjuUnivAuthError):
         super().__init__(message, **context)
         self.service = service
         self.available_services = available_services
+
+
+class InvalidServiceUsageError(MjuUnivAuthError):
+    """해당 서비스에서 지원하지 않는 기능을 호출했을 때 발생하는 에러"""
+
+    def __init__(
+        self,
+        message: str,
+        service: str,
+        **context
+    ):
+        super().__init__(message, **context)
+        self.service = service

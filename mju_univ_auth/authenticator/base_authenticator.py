@@ -12,8 +12,10 @@ from ..exceptions import (
     InvalidCredentialsError,
     NetworkError,
     ServiceNotFoundError,
-    PageParsingError,
+    ParsingError,
     SessionExpiredError,
+    AlreadyLoggedInError,
+    InvalidServiceUsageError,
 )
 
 
@@ -36,6 +38,7 @@ class BaseAuthenticator:
         self._user_pw = user_pw
         self._verbose = verbose
         self._session: Optional[requests.Session] = None
+        self._service: Optional[str] = None
 
     def login(self, service: str = 'msi') -> MjuUnivAuthResult[requests.Session]:
         """
@@ -50,6 +53,7 @@ class BaseAuthenticator:
         session = requests.Session()
         try:
             self._execute_login(session, service)
+            self._service = service
 
             return MjuUnivAuthResult(
                 request_succeeded=True,
@@ -78,11 +82,11 @@ class BaseAuthenticator:
                 error_code=ErrorCode.SERVICE_NOT_FOUND,
                 error_message=str(e)
             )
-        except PageParsingError as e:
+        except ParsingError as e:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=True,
-                error_code=ErrorCode.PAGE_PARSING_ERROR,
+                error_code=ErrorCode.PARSE_ERROR,
                 error_message=str(e)
             )
         except SessionExpiredError as e:
@@ -90,6 +94,20 @@ class BaseAuthenticator:
                 request_succeeded=False,
                 credentials_valid=True,
                 error_code=ErrorCode.SESSION_EXPIRED,
+                error_message=str(e)
+            )
+        except AlreadyLoggedInError as e:
+            return MjuUnivAuthResult(
+                request_succeeded=False,
+                credentials_valid=True,
+                error_code=ErrorCode.ALREADY_LOGGED_IN,
+                error_message=str(e)
+            )
+        except InvalidServiceUsageError as e:
+            return MjuUnivAuthResult(
+                request_succeeded=False,
+                credentials_valid=False,
+                error_code=ErrorCode.SERVICE_INVALID,
                 error_message=str(e)
             )
         except Exception as e:
@@ -117,11 +135,18 @@ class BaseAuthenticator:
         """
         raise NotImplementedError
 
-    def get_session(self) -> Optional[requests.Session]:
+    @property
+    def session(self) -> Optional[requests.Session]:
         """
-        현재 세션을 반환합니다.
-
-        Returns:
-            Optional[requests.Session]: 현재 세션 객체, 없으면 None
+        현재 로그인된 `requests.Session` 객체를 반환합니다.
+        로그인되지 않은 경우 `None`을 반환합니다.
         """
         return self._session
+
+    @property
+    def service(self) -> Optional[str]:
+        """
+        로그인에 성공한 서비스의 이름을 반환합니다.
+        로그인되지 않은 경우 `None`을 반환합니다.
+        """
+        return self._service

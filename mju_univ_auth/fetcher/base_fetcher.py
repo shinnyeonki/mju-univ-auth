@@ -10,9 +10,10 @@ import requests
 from ..results import MjuUnivAuthResult, ErrorCode
 from ..exceptions import (
     NetworkError,
-    PageParsingError,
+    ParsingError,
     InvalidCredentialsError,
     SessionExpiredError,
+    SessionNotExistError,
 )
 
 T = TypeVar('T')
@@ -25,6 +26,17 @@ class BaseFetcher(Generic[T]):
         self.session = session
 
     def fetch(self) -> MjuUnivAuthResult[T]:
+        if self.session is None:
+            try:
+                raise SessionNotExistError()
+            except SessionNotExistError as e:
+                return MjuUnivAuthResult(
+                    request_succeeded=False,
+                    credentials_valid=False,
+                    error_code=ErrorCode.SESSION_NOT_EXIST,
+                    error_message=str(e)
+                )
+
         try:
             data = self._execute()
             return MjuUnivAuthResult(
@@ -33,7 +45,7 @@ class BaseFetcher(Generic[T]):
                 data=data
             )
             
-        except PageParsingError as e:
+        except ParsingError as e:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=True,

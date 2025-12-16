@@ -14,7 +14,7 @@ from ..infrastructure.parser import HTMLParser
 from ..domain.student_card import StudentCard
 from ..exceptions import (
     NetworkError,
-    PageParsingError,
+    ParsingError,
     InvalidCredentialsError,
     SessionExpiredError,
 )
@@ -98,7 +98,7 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         self._csrf_token = HTMLParser.extract_csrf_token(response.text)
 
         if not self._csrf_token:
-            raise PageParsingError("CSRF 토큰을 찾을 수 없습니다.", field="csrf")
+            raise ParsingError("CSRF 토큰을 찾을 수 없습니다.", field="csrf")
 
         if self._verbose:
             logger.debug(f"CSRF Token: {self._csrf_token}")
@@ -234,7 +234,7 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         fields = HTMLParser.parse_student_card_fields(html)
 
         if '학번' not in fields or not fields['학번']:
-            raise PageParsingError("학생 정보를 찾을 수 없습니다 (학번 필드 누락).", field="student_id")
+            raise ParsingError("학생 정보를 찾을 수 없습니다 (학번 필드 누락).", field="student_id")
 
         student_card = StudentCard.from_parsed_fields(fields)
 

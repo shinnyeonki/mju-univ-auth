@@ -41,10 +41,13 @@ from .results import MjuUnivAuthResult, ErrorCode
 from .exceptions import (
     MjuUnivAuthError,
     NetworkError,
-    PageParsingError,
+    ParsingError,
     InvalidCredentialsError,
     SessionExpiredError,
+    SessionNotExistError,
+    AlreadyLoggedInError,
     ServiceNotFoundError,
+    InvalidServiceUsageError,
 )
 
 __all__ = [
@@ -71,10 +74,13 @@ __all__ = [
     # 예외 클래스
     'MjuUnivAuthError',
     'NetworkError',
-    'PageParsingError',
+    'ParsingError',
     'InvalidCredentialsError',
     'SessionExpiredError',
+    'SessionNotExistError',
+    'AlreadyLoggedInError',
     'ServiceNotFoundError',
+    'InvalidServiceUsageError',
 ]
 
 __version__ = '0.5.0'

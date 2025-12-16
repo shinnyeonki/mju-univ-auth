@@ -298,7 +298,7 @@ def main():
     print_banner()
     
     if not user_id or not user_pw:
-        print(f"{Colors.RED}✗ .env 파일에서 MJU_ID, MJU_PW를 찾을 수 없습니다.{Colors.END}")
+        print(f"{Colors.RED}✗ 환경변수나 .env 파일에서 MJU_ID, MJU_PW를 찾을 수 없습니다.{Colors.END}")
         print("\n환경변수 설정 방법:")
         print("  export MJU_ID=학번")
         print("  export MJU_PW=비밀번호")
@@ -309,13 +309,31 @@ def main():
     
     # logging.getLogger().setLevel(logging.DEBUG)
     # 테스트 실행
-    high_level_ok = test_high_level_api(user_id, user_pw)
-    service_results = test_all_services_login(user_id, user_pw)
-    fetcher_ok = test_fetchers_with_session(user_id, user_pw)
-    chaining_ok = test_chaining_api(user_id, user_pw)
+    # high_level_ok = test_high_level_api(user_id, user_pw)
+    # service_results = test_all_services_login(user_id, user_pw)
+    # fetcher_ok = test_fetchers_with_session(user_id, user_pw)
+    # chaining_ok = test_chaining_api(user_id, user_pw)
     
     # 결과 요약
-    print_summary(high_level_ok, service_results, fetcher_ok, chaining_ok)
+    # print_summary(high_level_ok, service_results, fetcher_ok, chaining_ok)
+    
+    
+    # 각 줄의 시간을 측정
+    # import time
+    # auth = StandardAuthenticator(user_id=user_id, user_pw=user_pw, verbose=True)
+    # start_time = time.time()
+    # msi_session = auth.login('msi')
+    # end_time = time.time()
+    # print(f"msi 서비스 로그인 시간: {end_time - start_time:.4f}초") # 평균 0.8초 내외
+    
+    # start_time = time.time()
+    # auth.is_session_valid("msi")
+    # end_time = time.time()
+    # print(f"msi 세션 유효성 검사 시간: {end_time - start_time:.4f}초") # 평균 0.3초 내외
+    
+    # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_card()
+    result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_changelog()
+    print(result)
 
 
 if __name__ == "__main__":
