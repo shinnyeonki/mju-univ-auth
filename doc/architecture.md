@@ -57,7 +57,7 @@ mju_univ_auth/
 # 서비스 개발자가 원하는 방식
 result = auth.login()
 if not result.success:
-    if result.error_code == ErrorCode.AUTH_FAILED:
+    if result.error_code == ErrorCode.INVALID_CREDENTIALS_ERROR:
         return {"error": "아이디 또는 비밀번호가 틀렸습니다"}
     elif result.error_code == ErrorCode.NETWORK_ERROR:
         return {"error": "서버 연결 실패"}
@@ -124,14 +124,14 @@ class MjuUnivAuthResult(Generic[T]):
 class ErrorCode(str, Enum):
     NONE = ""
     NETWORK_ERROR = "NETWORK_ERROR"
-    AUTH_FAILED = "AUTH_FAILED"
-    PARSE_ERROR = "PARSE_ERROR"
-    SESSION_NOT_EXIST = "SESSION_NOT_EXIST"
-    SESSION_EXPIRED = "SESSION_EXPIRED"
-    SERVICE_INVALID = "SERVICE_INVALID"
-    SERVICE_NOT_FOUND = "SERVICE_NOT_FOUND"
-    ALREADY_LOGGED_IN = "ALREADY_LOGGED_IN"
-    UNKNOWN = "UNKNOWN"
+    PARSING_ERROR = "PARSING_ERROR"
+    INVALID_CREDENTIALS_ERROR = "INVALID_CREDENTIALS_ERROR"
+    SESSION_NOT_EXIST_ERROR = "SESSION_NOT_EXIST_ERROR"
+    SESSION_EXPIRED_ERROR = "SESSION_EXPIRED_ERROR"
+    ALREADY_LOGGED_IN_ERROR = "ALREADY_LOGGED_IN_ERROR"
+    SERVICE_NOT_FOUND_ERROR = "SERVICE_NOT_FOUND_ERROR"
+    INVALID_SERVICE_USAGE_ERROR = "INVALID_SERVICE_USAGE_ERROR"
+    UNKNOWN_ERROR = "UNKNOWN_ERROR"
 ```
 
 ### 3.3. 커스텀 예외 계층
@@ -208,7 +208,7 @@ class MjuUnivAuth:
         if self._login_failed:
             return self._login_error
         if self._session is None:
-            return MjuUnivAuthResult(error_code=ErrorCode.SESSION_NOT_EXIST, ...)
+            return MjuUnivAuthResult(error_code=ErrorCode.SESSION_NOT_EXIST_ERROR, ...)
         
         fetcher = StudentCardFetcher(self._session, ...)
         return fetcher.fetch()
@@ -291,19 +291,19 @@ class BaseFetcher(Generic[T]):
             try:
                 raise SessionNotExistError()
             except SessionNotExistError as e:
-                return MjuUnivAuthResult(error_code=ErrorCode.SESSION_NOT_EXIST, ...)
+                return MjuUnivAuthResult(error_code=ErrorCode.SESSION_NOT_EXIST_ERROR, ...)
 
         try:
             data = self._execute()  # 자식 클래스 구현
             return MjuUnivAuthResult(success, data=data)
         except ParsingError as e:
-            return MjuUnivAuthResult(error_code=ErrorCode.PARSE_ERROR, ...)
+            return MjuUnivAuthResult(error_code=ErrorCode.PARSING_ERROR, ...)
         except NetworkError as e:
             return MjuUnivAuthResult(error_code=ErrorCode.NETWORK_ERROR, ...)
         except SessionExpiredError as e:
-            return MjuUnivAuthResult(error_code=ErrorCode.SESSION_EXPIRED, ...)
+            return MjuUnivAuthResult(error_code=ErrorCode.SESSION_EXPIRED_ERROR, ...)
         except Exception as e:
-            return MjuUnivAuthResult(error_code=ErrorCode.UNKNOWN, ...)
+            return MjuUnivAuthResult(error_code=ErrorCode.UNKNOWN_ERROR, ...)
     
     def _execute(self) -> T:
         """자식 클래스에서 구현 - 예외를 raise"""
@@ -487,13 +487,13 @@ class MjuUnivAuth:
         if self._session is None:
             return MjuUnivAuthResult(
                 request_succeeded=False,
-                error_code=ErrorCode.SESSION_NOT_EXIST,
+                error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
                 error_message="세션이 없습니다. 먼저 login()을 호출해주세요."
             )
         
         # 특정 서비스 로그인이 필요한 경우, 서비스 체크
         # if self._service != 'msi':
-        #     return MjuUnivAuthResult(error_code=ErrorCode.SERVICE_INVALID, ...)
+        #     return MjuUnivAuthResult(error_code=ErrorCode.INVALID_SERVICE_USAGE_ERROR, ...)
 
         fetcher = NewDataFetcher(self._session, self._verbose)
         return fetcher.fetch()

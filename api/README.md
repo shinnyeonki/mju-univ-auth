@@ -137,7 +137,7 @@
 | 408 | `NETWORK_TIMEOUT`  | 학교 서버가 응답하지 않음 |
 | 502 | `NETWORK_ERROR`  | 학교 서버와 네트워크 연결 문제 |
 | 500 | `PAGE_PARSING_ERROR`  | 학교 웹페이지 구조 변경 |
-| 503 | `SESSION_EXPIRED`  | 학교 서버 세션 만료 (재시도 필요) |
+| 503 | `SESSION_EXPIRED_ERROR`  | 학교 서버 세션 만료 (재시도 필요) |
 | 500 | `INTERNAL_SERVER_ERROR` | 서버 내부 오류, 라이브러리 오류 |
 
 ---

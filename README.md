@@ -209,11 +209,11 @@ class MjuUnivAuthResult(Generic[T]):
 class ErrorCode(str, Enum):
     NONE = ""                    # 에러 없음 (성공)
     NETWORK_ERROR = "NETWORK_ERROR"       # 네트워크 연결 실패
-    AUTH_FAILED = "AUTH_FAILED"           # 인증 실패 (ID/PW 오류)
-    PARSE_ERROR = "PARSE_ERROR"           # HTML 파싱 실패
-    SESSION_EXPIRED = "SESSION_EXPIRED"   # 세션 만료
-    SERVICE_NOT_FOUND = "SERVICE_NOT_FOUND" # 지원하지 않는 서비스
-    UNKNOWN = "UNKNOWN"                   # 알 수 없는 오류
+    INVALID_CREDENTIALS_ERROR = "INVALID_CREDENTIALS_ERROR"           # 인증 실패 (ID/PW 오류)
+    PARSING_ERROR = "PARSING_ERROR"           # HTML 파싱 실패
+    SESSION_EXPIRED_ERROR = "SESSION_EXPIRED_ERROR"   # 세션 만료
+    SERVICE_NOT_FOUND_ERROR = "SERVICE_NOT_FOUND_ERROR" # 지원하지 않는 서비스
+    UNKNOWN_ERROR = "UNKNOWN_ERROR"                   # 알 수 없는 오류
 ```
 
 ### 5.4. request_succeeded와 credentials_valid 분리 이유
@@ -246,14 +246,14 @@ else:
 # 방법 2: 에러 코드별 세분화 처리
 if result.success:
     print(result.data.name_korean)
-elif result.error_code == ErrorCode.AUTH_FAILED:
+elif result.error_code == ErrorCode.INVALID_CREDENTIALS_ERROR:
     print("아이디 또는 비밀번호가 틀렸습니다.")
 elif result.error_code == ErrorCode.NETWORK_ERROR:
     print("네트워크 연결을 확인해주세요.")
     # 재시도 로직 구현 가능
-elif result.error_code == ErrorCode.SESSION_EXPIRED:
+elif result.error_code == ErrorCode.SESSION_EXPIRED_ERROR:
     print("세션이 만료되었습니다. 다시 로그인해주세요.")
-elif result.error_code == ErrorCode.PARSE_ERROR:
+elif result.error_code == ErrorCode.PARSING_ERROR:
     print("페이지 구조가 변경되었을 수 있습니다.")
 else:
     print(f"알 수 없는 오류: {result.error_message}")

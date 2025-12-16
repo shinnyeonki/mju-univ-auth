@@ -25,5 +25,9 @@ exclude = [
 dev = [
     "pytest>=9.0.1",
     "pytest-cov>=7.0.0",
+    "fastapi>=0.123.0",
+    "loguru>=0.7.3",
+    "mju-univ-auth>=0.6.5",
+    "uvicorn>=0.38.0",
 ]
 

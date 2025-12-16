@@ -39,9 +39,10 @@ JS_REDIRECT_HTML = """
 </script>
 """
 
-ERROR_MSG_HTML_ALERT = """
+ESCAPED_KOREAN_STRING = r"아이디 또는 비밀번호가 일치하지 않습니다.".encode('unicode_escape').decode('latin-1')
+ERROR_MSG_HTML_ALERT = f"""
 <script>
-    alert('아이디 또는 비밀번호가 일치하지 않습니다.');
+    alert('{ESCAPED_KOREAN_STRING}');
 </script>
 """
 

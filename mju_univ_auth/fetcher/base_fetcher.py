@@ -33,7 +33,7 @@ class BaseFetcher(Generic[T]):
                 return MjuUnivAuthResult(
                     request_succeeded=False,
                     credentials_valid=False,
-                    error_code=ErrorCode.SESSION_NOT_EXIST,
+                    error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
                     error_message=str(e)
                 )
 
@@ -49,7 +49,7 @@ class BaseFetcher(Generic[T]):
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=True,
-                error_code=ErrorCode.PARSE_ERROR,
+                error_code=ErrorCode.PARSING_ERROR,
                 error_message=str(e)
             )
             
@@ -65,7 +65,7 @@ class BaseFetcher(Generic[T]):
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=False,
-                error_code=ErrorCode.SESSION_EXPIRED,
+                error_code=ErrorCode.SESSION_EXPIRED_ERROR,
                 error_message=str(e)
             )
 
@@ -73,7 +73,7 @@ class BaseFetcher(Generic[T]):
             return MjuUnivAuthResult(
                 request_succeeded=True,
                 credentials_valid=False,
-                error_code=ErrorCode.AUTH_FAILED,
+                error_code=ErrorCode.INVALID_CREDENTIALS_ERROR,
                 error_message=str(e),
             )
 
@@ -81,7 +81,7 @@ class BaseFetcher(Generic[T]):
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=None,
-                error_code=ErrorCode.UNKNOWN,
+                error_code=ErrorCode.UNKNOWN_ERROR,
                 error_message=str(e)
             )
 

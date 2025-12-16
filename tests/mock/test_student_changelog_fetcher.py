@@ -60,7 +60,7 @@ def test_student_changelog_fetcher_parse_error(monkeypatch, dummy_session):
     result = fetcher.fetch()
 
     assert not result.request_succeeded
-    assert result.error_code == ErrorCode.PARSE_ERROR
+    assert result.error_code == ErrorCode.PARSING_ERROR
 
 
 def test_student_changelog_fetcher_network_error(monkeypatch, dummy_session):

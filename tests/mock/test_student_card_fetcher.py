@@ -77,7 +77,7 @@ def test_student_card_fetcher_parse_error(monkeypatch, dummy_session):
 
     assert not result.request_succeeded
     assert result.credentials_valid is True
-    assert result.error_code == ErrorCode.PARSE_ERROR
+    assert result.error_code == ErrorCode.PARSING_ERROR
 
 
 def test_student_card_fetcher_network_error(monkeypatch, dummy_session):
@@ -111,5 +111,5 @@ def test_student_card_fetcher_invalid_second_password(monkeypatch, dummy_session
 
     assert result.request_succeeded
     assert result.credentials_valid is False
-    assert result.error_code == ErrorCode.AUTH_FAILED
+    assert result.error_code == ErrorCode.INVALID_CREDENTIALS_ERROR
     assert '2차 비밀번호' in result.error_message

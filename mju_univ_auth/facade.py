@@ -166,7 +166,7 @@ class MjuUnivAuth:
         if self._session is None:
             return MjuUnivAuthResult(
                 request_succeeded=False,
-                error_code=ErrorCode.SESSION_NOT_EXIST,
+                error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
                 error_message="세션이 없습니다."
             )
         return MjuUnivAuthResult(request_succeeded=True, data=self._session)
@@ -198,14 +198,14 @@ class MjuUnivAuth:
         if self._session is None:
             return MjuUnivAuthResult(
                 request_succeeded=False,
-                error_code=ErrorCode.SESSION_NOT_EXIST,
+                error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
                 error_message="세션이 없습니다."
             )
         
         if self._service != 'msi':
             return MjuUnivAuthResult(
                 request_succeeded=False,
-                error_code=ErrorCode.SERVICE_INVALID,
+                error_code=ErrorCode.SERVICE_UNKNOWN_ERROR,
                 error_message="MSI 서비스로 로그인된 세션이 아닙니다. 학생카드는 MSI 서비스 로그인이 필요합니다."
             )
         
@@ -213,7 +213,7 @@ class MjuUnivAuth:
         # if self.is_logged_in('msi') is False:
         #     return MjuUnivAuthResult(
         #         request_succeeded=False,
-        #         error_code=ErrorCode.SESSION_EXPIRED,
+        #         error_code=ErrorCode.SESSION_EXPIRED_ERROR,
         #         error_message="세션이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요."
         #     )
 
@@ -247,14 +247,14 @@ class MjuUnivAuth:
         if self._session is None:
             return MjuUnivAuthResult(
                 request_succeeded=False,
-                error_code=ErrorCode.SESSION_NOT_EXIST,
+                error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
                 error_message="세션이 없습니다."
             )
     
         if self._service != 'msi':
             return MjuUnivAuthResult(
                 request_succeeded=False,
-                error_code=ErrorCode.SERVICE_INVALID,
+                error_code=ErrorCode.SERVICE_UNKNOWN_ERROR,
                 error_message="MSI 서비스로 로그인된 세션이 아닙니다. 학적변동내역은 MSI 서비스 로그인이 필요합니다."
             )
     

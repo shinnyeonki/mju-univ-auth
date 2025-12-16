@@ -784,11 +784,14 @@ class NetworkError(MjuUnivAuthError):
 
 ```
 MjuUnivAuthError (기본)
-├── NetworkError (네트워크)
-├── PageParsingError (파싱)
-├── InvalidCredentialsError (인증)
-├── SessionExpiredError (세션)
-└── ServiceNotFoundError (서비스)
+├── NetworkError
+├── ParsingError
+├── InvalidCredentialsError
+├── SessionExpiredError
+├── SessionNotExistError
+├── AlreadyLoggedInError
+├── ServiceNotFoundError
+└── InvalidServiceUsageError
 ```
 
 **컨텍스트 정보 포함**:
@@ -1068,7 +1071,9 @@ MjuUnivAuth.get_student_card()
     │
     ├──→ SessionExpiredError: 세션 만료
     │
-    ├──→ PageParsingError: HTML 파싱 실패
+    ├──→ ParsingError: HTML 파싱 실패
+    │
+    ├──→ InvalidServiceUsageError: 서비스 오용
     │
     └──→ MjuUnivAuthError: 기타 오류
 ```

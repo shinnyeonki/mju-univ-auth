@@ -65,7 +65,7 @@ class BaseAuthenticator:
             return MjuUnivAuthResult(
                 request_succeeded=True,
                 credentials_valid=False,
-                error_code=ErrorCode.AUTH_FAILED,
+                error_code=ErrorCode.INVALID_CREDENTIALS_ERROR,
                 error_message=str(e)
             )
         except NetworkError as e:
@@ -79,42 +79,42 @@ class BaseAuthenticator:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=False,
-                error_code=ErrorCode.SERVICE_NOT_FOUND,
+                error_code=ErrorCode.SERVICE_NOT_FOUND_ERROR,
                 error_message=str(e)
             )
         except ParsingError as e:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=True,
-                error_code=ErrorCode.PARSE_ERROR,
+                error_code=ErrorCode.PARSING_ERROR,
                 error_message=str(e)
             )
         except SessionExpiredError as e:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=True,
-                error_code=ErrorCode.SESSION_EXPIRED,
+                error_code=ErrorCode.SESSION_EXPIRED_ERROR,
                 error_message=str(e)
             )
         except AlreadyLoggedInError as e:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=True,
-                error_code=ErrorCode.ALREADY_LOGGED_IN,
+                error_code=ErrorCode.ALREADY_LOGGED_IN_ERROR,
                 error_message=str(e)
             )
         except InvalidServiceUsageError as e:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=False,
-                error_code=ErrorCode.SERVICE_INVALID,
+                error_code=ErrorCode.SERVICE_UNKNOWN_ERROR,
                 error_message=str(e)
             )
         except Exception as e:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=False,
-                error_code=ErrorCode.UNKNOWN,
+                error_code=ErrorCode.UNKNOWN_ERROR,
                 error_message=str(e)
             )
 

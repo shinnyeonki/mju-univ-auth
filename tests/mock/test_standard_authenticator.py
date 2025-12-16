@@ -36,13 +36,20 @@ REDIRECT_FORM_HTML = """
 # A minimal final page indicating success (e.g., has a logout button)
 FINAL_PAGE_HTML = "<html><body><a>로그아웃</a></body></html>"
 
-# A page indicating invalid credentials
-INVALID_CRED_HTML = """
+
+# A page indicating invalid credentials, with unicode escapes to match parser logic
+escaped_message = r"아이디 또는 비밀번호가 일치하지 않습니다.".encode('unicode_escape').decode('latin-1')
+INVALID_CRED_HTML = f"""
 <html><body>
-    <form id="signin-form"></form>
-    <script>alert('ID 또는 비밀번호가 일치하지 않습니다.');</script>
+    <form id="signin-form" action="/sso/process/login.do">
+        <input type="password" id="input-password" />
+    </form>
+    <script>
+        alert('{escaped_message}');
+    </script>
 </body></html>
 """
+
 
 @pytest.fixture
 def auth():
@@ -102,7 +109,7 @@ def test_login_failure_invalid_credentials(auth, requests_mock):
 
     assert not result.success
     assert not result.credentials_valid
-    assert "ID 또는 비밀번호" in result.error_message
+    assert "아이디 또는 비밀번호" in result.error_message
 
 def test_login_failure_parsing_error(auth, requests_mock):
     """Tests a login failure due to a malformed login page."""

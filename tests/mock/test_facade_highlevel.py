@@ -42,7 +42,7 @@ def test_get_student_card_with_no_login_attempt(monkeypatch):
     result = auth.get_student_card()
 
     assert not result.success
-    assert result.error_code == ErrorCode.SESSION_NOT_EXIST
+    assert result.error_code == ErrorCode.SESSION_NOT_EXIST_ERROR
     assert '세션이 없습니다' in result.error_message
 
 
@@ -50,12 +50,12 @@ def test_get_session_returns_stored_login_result_when_failed(monkeypatch):
     ma = MjuUnivAuth(user_id='user3', user_pw='pw3')
     ma._session = None
     ma._login_failed = True
-    ma._login_error = MjuUnivAuthResult(request_succeeded=True, credentials_valid=False, error_code=ErrorCode.AUTH_FAILED, error_message='Invalid credentials')
+    ma._login_error = MjuUnivAuthResult(request_succeeded=True, credentials_valid=False, error_code=ErrorCode.INVALID_CREDENTIALS_ERROR, error_message='Invalid credentials')
 
     result = ma.get_session()
     
     assert not result.success
-    assert result.error_code == ErrorCode.AUTH_FAILED
+    assert result.error_code == ErrorCode.INVALID_CREDENTIALS_ERROR
     assert result.error_message == 'Invalid credentials'
     assert result.credentials_valid is False
 
