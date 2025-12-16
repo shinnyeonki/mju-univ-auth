@@ -207,13 +207,17 @@ class MjuUnivAuthResult(Generic[T]):
 
 ```python
 class ErrorCode(str, Enum):
-    NONE = ""                    # 에러 없음 (성공)
-    NETWORK_ERROR = "NETWORK_ERROR"       # 네트워크 연결 실패
-    INVALID_CREDENTIALS_ERROR = "INVALID_CREDENTIALS_ERROR"           # 인증 실패 (ID/PW 오류)
-    PARSING_ERROR = "PARSING_ERROR"           # HTML 파싱 실패
-    SESSION_EXPIRED_ERROR = "SESSION_EXPIRED_ERROR"   # 세션 만료
-    SERVICE_NOT_FOUND_ERROR = "SERVICE_NOT_FOUND_ERROR" # 지원하지 않는 서비스
-    UNKNOWN_ERROR = "UNKNOWN_ERROR"                   # 알 수 없는 오류
+    NONE = ""
+    NETWORK_ERROR = "NETWORK_ERROR" # 명지대 서버(업스트림)와 통신하는 데 실패함
+    PARSING_ERROR = "PARSING_ERROR" # 명지대 웹사이트 구조 변경 등으로 서버가 응답을 파싱할 수 없음
+    INVALID_CREDENTIALS_ERROR = "INVALID_CREDENTIALS_ERROR" # 아이디/비밀번호 불일치 등 인증 실패
+    SESSION_NOT_EXIST_ERROR = "SESSION_NOT_EXIST_ERROR" # 로그인을 하지 않아 세션이 없는 상태. 인증이 필요한 리소스에 접근했으므로 인증을 요구
+    SESSION_EXPIRED_ERROR = "SESSION_EXPIRED_ERROR" # 세션이 만료됨. 클라이언트가 재인증(재로그인)을 통해 새로운 세션을 받아야 함
+    ALREADY_LOGGED_IN_ERROR = "ALREADY_LOGGED_IN_ERROR" # 이미 로그인된 상태에서 다시 로그인을 시도하는 등 현재 서버의 상태와 충돌되는 요청을 보냄
+    SERVICE_NOT_FOUND_ERROR = "SERVICE_NOT_FOUND_ERROR" # 요청 형식은 유효하지만, 내용(존재하지 않는 서비스 이름)을 처리할 수 없음을 의미
+    SERVICE_UNKNOWN_ERROR = "SERVICE_UNKNOWN_ERROR" # 알 수 없는 서비스 이름이 요청됨
+    INVALID_SERVICE_USAGE_ERROR = "INVALID_SERVICE_USAGE_ERROR" # 현재 로그인된 서비스로는 해당 기능을 사용할 수 없음을 의미
+    UNKNOWN_ERROR = "UNKNOWN_ERROR" # 원인을 특정할 수 없는 라이브러리 내부의 일반적인 오류.
 ```
 
 ### 5.4. request_succeeded와 credentials_valid 분리 이유

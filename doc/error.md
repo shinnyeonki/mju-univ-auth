@@ -24,15 +24,16 @@ MjuUnivAuthError
 
 | 라이브러리 예외 클래스 | `ErrorCode` Enum | HTTP 상태 코드 | 설명 |
 | :--- | :--- | :--- | :--- |
+| `NetworkError` | `NETWORK_ERROR` | **502 Bad Gateway** | API 서버가 명지대 서버(업스트림)와 통신하는 데 실패함. 게이트웨이 역할을 하는 xAPI 서버에 적합한 코드. |
+| `ParsingError` | `PARSING_ERROR` | **500 Internal Server Error** | 명지대 웹사이트 구조 변경 등으로 서버가 응답을 파싱할 수 없음. 서버 로직 수정이 필요한 문제. |
 | `InvalidCredentialsError` | `INVALID_CREDENTIALS_ERROR` | **401 Unauthorized** | 아이디/비밀번호 불일치 등 인증 실패. 클라이언트가 재인증을 시도해야 함. |
 | `SessionNotExistError` | `SESSION_NOT_EXIST_ERROR` | **401 Unauthorized** | 로그인을 하지 않아 세션이 없는 상태. 인증이 필요한 리소스에 접근했으므로 인증을 요구. |
 | `SessionExpiredError` | `SESSION_EXPIRED_ERROR` | **401 Unauthorized** | 세션이 만료됨. 클라이언트가 재인증(재로그인)을 통해 새로운 세션을 받아야 함. |
 | `InvalidServiceUsageError`| `INVALID_SERVICE_USAGE_ERROR` | **403 Forbidden** | 인증은 되었으나, 현재 로그인된 서비스로는 해당 기능을 사용할 권한이 없음을 의미. |
 | `AlreadyLoggedInError` | `ALREADY_LOGGED_IN_ERROR` | **409 Conflict** | 이미 로그인된 상태에서 다시 로그인을 시도하는 등 현재 서버의 상태와 충돌되는 요청을 보냄. |
-| `ServiceNotFoundError` | `SERVICE_NOT_FOUND_ERROR` | **422 Unprocessable Entity** | 요청 형식은 유효하지만, 내용(존재하지 않는 서비스 이름)을 처리할 수 없음을 의미. |
+| `ServiceNotFoundError` | `SERVICE_NOT_FOUND_ERROR` | **422 Unprocessable Content** | 요청 형식은 유효하지만, 내용(존재하지 않는 서비스 이름)을 처리할 수 없음을 의미. |
+| `InvalidServiceUsageError` |    `INVALID_SERVICE_USAGE_ERROR` | **403 Forbidden** | 현재 로그인된 서비스로는 해당 기능을 사용할 수 없음을 의미. |
 | `MjuUnivAuthError` | `UNKNOWN_ERROR` | **500 Internal Server Error** | 원인을 특정할 수 없는 라이브러리 내부의 일반적인 오류. 서버 측의 예외 상황. |
-| `ParsingError` | `PARSING_ERROR` | **500 Internal Server Error** | 명지대 웹사이트 구조 변경 등으로 서버가 응답을 파싱할 수 없음. 서버 로직 수정이 필요한 문제. |
-| `NetworkError` | `NETWORK_ERROR` | **502 Bad Gateway** | API 서버가 명지대 서버(업스트림)와 통신하는 데 실패함. 게이트웨이 역할을 하는 API 서버에 적합한 코드. |
 
 ---
 
