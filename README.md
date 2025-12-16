@@ -50,37 +50,28 @@ pip install mju-univ-auth
 
 | 서비스 | 코드명 | 설명 |
 |--------|--------|------|
-| 명지대 통합 포털 | `"main"` | 기본 포털 |
-| 학사행정시스템 (MSI) | `"msi"` | 학생카드, 성적, 수강신청 등 |
-| LMS (LearnUs) | `"lms"` | 강의 자료, 과제 |
-| 캡스톤/현장실습 | `"myicap"` | MyiCAP |
-| 인턴십 시스템 | `"intern"` | 인턴십 관리 |
-| IPP (산업연계) | `"ipp"` | 산업연계 프로그램 |
-| U-CHECK | `"ucheck"` | 출석 확인 |
+| 명지대 통합 포털 | `"main"` | 기본 포털 | v | `StandardAuthenticator` |
+| 학사행정시스템 (MSI) | `"msi"` | 학생카드, 성적, 수강신청 등 | v | `StandardAuthenticator` |
+| LMS (LearnUs) | `"lms"` | 강의 자료, 과제 | v | `StandardAuthenticator` |
+| 캡스톤/현장실습 | `"myicap"` | MyiCAP | v | `StandardAuthenticator` |
+| 인턴십 시스템 | `"intern"` | 인턴십 관리 | v | `StandardAuthenticator` |
+| IPP (산업연계) | `"ipp"` | 산업연계 프로그램 | v | `StandardAuthenticator` |
+| U-CHECK | `"ucheck"` | 출석 확인 | v | `StandardAuthenticator` |
+| Libary | `"lib"` | 도서관 | x | 구현중 |
+
 
 ```python
 # 예: LMS 로그인 후 세션 획득
 result = MjuUnivAuth("학번", "비밀번호").login("lms").get_session()
 ```
 
----
-
-### 현 상황
-현재 이 라이브러리는
-- 명지대 메인 페이지 세션 => `main`
-- 학사행정시스템(MSI) => `msi`
-- LMS => `lms`
-- MyiCAP => `myicap`
-- 인턴십 시스템 => `intern`
-- IPP => `ipp`
-- U-CHECK => `ucheck`
-명지대 하위 서비스들의 로그인된 세션을 얻을 수 있으며
-
-특히 로그인된 MSI 세션을 통해서는 학생카드 정보와 학적변동내역을 조회할 수 있습니다.
 
 ## 4. 기본 사용법 (고수준 API)
 
 `MjuUnivAuth` 클래스는 복잡한 내부 로직(세션 관리)을 숨기고 간단한 API를 제공합니다.
+```python
+result = MjuUnivAuth(user_id="학번", user_pw="비밀번호").login("msi").get_student_card()
+```
 
 **중요**: 모든 데이터 조회(`get_student_card`, `get_student_changelog` 등) 전에 반드시 `.login()` 메서드를 호출하여 세션을 초기화해야 합니다.
 

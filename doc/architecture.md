@@ -14,10 +14,15 @@ mju_univ_auth/
 ├── __main__.py              # CLI 진입점
 │
 ├── facade.py                # MjuUnivAuth - 사용자 친화적 고수준 API
-├── Authenticator.py         # SSO 인증 로직
-├── base_fetcher.py          # Fetcher 기반 클래스 (예외 → Result 변환)
-├── student_card_fetcher.py  # 학생카드 조회
-├── student_change_log_fetcher.py # 학적변동내역 조회
+│
+├── authenticator/           # 인증 관련 로직
+│   ├── base_authenticator.py  # Authenticator 기반 클래스
+│   └── standard_authenticator.py # 표준 SSO 인증 로직
+│
+├── fetcher/                 # 데이터 조회 관련 로직
+│   ├── base_fetcher.py      # Fetcher 기반 클래스
+│   ├── student_card_fetcher.py # 학생카드 조회
+│   └── student_change_log_fetcher.py # 학적변동내역 조회
 │
 ├── results.py               # MjuUnivAuthResult - 통합 결과 객체
 ├── exceptions.py            # 커스텀 예외 클래스들
@@ -118,12 +123,15 @@ class MjuUnivAuthResult(Generic[T]):
 ```python
 class ErrorCode(str, Enum):
     NONE = ""
-    NETWORK_ERROR = "NETWORK_ERROR"       # 네트워크 연결 실패
-    AUTH_FAILED = "AUTH_FAILED"           # 인증 실패 (ID/PW 오류)
-    PARSE_ERROR = "PARSE_ERROR"           # HTML 파싱 실패
-    SESSION_EXPIRED = "SESSION_EXPIRED"   # 세션 만료
-    SERVICE_NOT_FOUND = "SERVICE_NOT_FOUND" # 지원하지 않는 서비스
-    UNKNOWN = "UNKNOWN"                   # 알 수 없는 오류
+    NETWORK_ERROR = "NETWORK_ERROR"
+    AUTH_FAILED = "AUTH_FAILED"
+    PARSE_ERROR = "PARSE_ERROR"
+    SESSION_NOT_EXIST = "SESSION_NOT_EXIST"
+    SESSION_EXPIRED = "SESSION_EXPIRED"
+    SERVICE_INVALID = "SERVICE_INVALID"
+    SERVICE_NOT_FOUND = "SERVICE_NOT_FOUND"
+    ALREADY_LOGGED_IN = "ALREADY_LOGGED_IN"
+    UNKNOWN = "UNKNOWN"
 ```
 
 ### 3.3. 커스텀 예외 계층
@@ -132,11 +140,14 @@ class ErrorCode(str, Enum):
 
 ```python
 MjuUnivAuthError (기본)
-├── NetworkError          # 네트워크 요청 실패
-├── PageParsingError      # HTML 파싱 실패
-├── InvalidCredentialsError # 인증 실패
-├── SessionExpiredError   # 세션 만료
-└── ServiceNotFoundError  # 서비스 미지원
+├── NetworkError
+├── ParsingError
+├── InvalidCredentialsError
+├── SessionExpiredError
+├── SessionNotExistError
+├── AlreadyLoggedInError
+├── ServiceNotFoundError
+└── InvalidServiceUsageError
 ```
 
 #### 예외에 Context 정보 포함
@@ -157,63 +168,105 @@ class NetworkError(MjuUnivAuthError):
 
 ### 4.1. Facade Layer - `MjuUnivAuth` (고수준 API)
 
-사용자가 가장 편하게 사용할 수 있는 객체 입니다.
+사용자가 가장 편하게 사용할 수 있는 메인 클래스입니다. 복잡한 내부 로직(인증, 세션 관리, Fetcher 인스턴스화 등)을 캡슐화하고 간단한 API를 제공합니다.
+
+**"하나의 인스턴스는 하나의 성공적인 세션만 책임진다"** 원칙을 따릅니다. `login()` 호출이 성공하면 세션이 인스턴스 내에 저장되고, 실패하면 이후 모든 데이터 조회 메서드는 해당 로그인 실패 `Result`를 즉시 반환합니다.
 
 ```python
 class MjuUnivAuth:
     """
-    복잡한 내부 로직을 숨기고, 단순한 API를 제공
     - 세션 관리 자동화
     - 메서드 체이닝 지원
-    - 자동 로그인 (필요 시)
+    - 명시적 로그인 필요
     """
     
+    def __init__(self, user_id, user_pw, verbose=False):
+        # ...
+        self._session: Optional[requests.Session] = None
+        self._login_failed: bool = False
+        self._login_error: Optional[MjuUnivAuthResult] = None
+
     def login(self, service: str = 'msi') -> 'MjuUnivAuth':
-        """체이닝을 위해 self 반환"""
-        # 내부적으로 Authenticator 사용
-        authenticator = Authenticator(user_id, user_pw, verbose)
+        """
+        로그인 성공 시 세션을 내부에 저장하고, 체이닝을 위해 self 반환.
+        실패 시 에러 상태를 저장.
+        """
+        authenticator = StandardAuthenticator(...)
         result = authenticator.login(service)
-        # result 저장 후 self 반환
+        
+        if result.success:
+            self._session = result.data
+            # ...
+        else:
+            self._login_failed = True
+            self._login_error = result
         return self
     
     def get_student_card(self) -> MjuUnivAuthResult[StudentCard]:
-        """자동 로그인 후 학생카드 조회"""
-        self._ensure_login(service='msi')  # 필요 시 자동 로그인
-        fetcher = StudentCardFetcher(session, user_pw, verbose)
+        """학생카드 조회"""
+        # 로그인 실패했거나, 세션이 없으면 에러 반환
+        if self._login_failed:
+            return self._login_error
+        if self._session is None:
+            return MjuUnivAuthResult(error_code=ErrorCode.SESSION_NOT_EXIST, ...)
+        
+        fetcher = StudentCardFetcher(self._session, ...)
         return fetcher.fetch()
 ```
 
 #### 사용 예시
 
 ```python
-# 체이닝
-result = MjuUnivAuth("학번", "비번").login().get_student_card()
-
-# 명시적
+# 1. 인스턴스 생성 및 로그인
 auth = MjuUnivAuth("학번", "비번")
-auth.login("msi")
-result = auth.get_student_card()
+login_result = auth.login("msi") # login()은 self를 반환
 
-# 자동 로그인 (login 호출 안 해도 됨)
-result = MjuUnivAuth("학번", "비번").get_student_card()
+# 2. 로그인 성공 여부 확인 (선택 사항)
+if not auth.is_logged_in():
+    # auth.get_session()을 통해 구체적인 로그인 실패 원인 확인 가능
+    print(f"로그인 실패: {auth.get_session().error_message}")
+    return
+
+# 3. 정보 조회
+card_result = auth.get_student_card()
+if card_result.success:
+    print(card_result.data.name_korean)
+
+# 체이닝을 이용한 한 줄 호출
+card_result = MjuUnivAuth("학번", "비번").login("msi").get_student_card()
 ```
 
 ### 4.2. Authenticator - SSO 인증 (저수준 API)
 
-로그인을 하여 session 을 얻는 목적입니다 SSO 로그인의 전체 흐름을 처리합니다.
+`authenticator` 패키지는 로그인을 수행하여 `requests.Session`을 얻는 것을 목적으로 합니다. SSO 로그인의 전체 흐름을 처리하며, 역할에 따라 두 개의 클래스로 분리되었습니다.
+
+- **`BaseAuthenticator`**: 인증 로직의 뼈대를 정의하는 추상 기반 클래스입니다. `login` 메서드는 예외를 `MjuUnivAuthResult`로 변환하는 상위 수준 API 역할을 합니다.
+- **`StandardAuthenticator`**: `BaseAuthenticator`를 상속받아 실제 명지대학교 표준 SSO 인증 로직을 구현합니다. 내부 `_execute_login` 메서드는 실패 시 예외를 발생시키는 저수준 API 역할을 합니다.
 
 ```python
-class Authenticator:
+# base_authenticator.py
+class BaseAuthenticator:
     def login(self, service) -> MjuUnivAuthResult[Session]:
         """Public API - 항상 Result 반환"""
         try:
+            # 자식 클래스의 _execute_login 호출
             self._execute_login(session, service)
             return MjuUnivAuthResult(success...)
         except InvalidCredentialsError as e:
             return MjuUnivAuthResult(error...)
-    
+        # ... other exceptions
+
     def _execute_login(self, session, service):
-        """Internal - 예외 발생"""
+        """Internal - 자식 클래스에서 구현, 예외 발생"""
+        raise NotImplementedError
+
+# standard_authenticator.py
+class StandardAuthenticator(BaseAuthenticator):
+    def _execute_login(self, session, service):
+        """Internal - 실제 로직 구현, 예외 발생"""
+        if self.is_session_valid(service):
+            raise AlreadyLoggedInError(...)
+            
         self._fetch_login_page(...)      # 1. 페이지 접속
         encrypted = self._prepare_encrypted_data()  # 2. 암호화
         response = self._submit_login(...)  # 3. 로그인 요청
@@ -233,17 +286,24 @@ class Authenticator:
 class BaseFetcher(Generic[T]):
     def fetch(self) -> MjuUnivAuthResult[T]:
         """Template Method Pattern"""
+        if self.session is None:
+            # 세션이 없는 경우 즉시 에러 Result 반환
+            try:
+                raise SessionNotExistError()
+            except SessionNotExistError as e:
+                return MjuUnivAuthResult(error_code=ErrorCode.SESSION_NOT_EXIST, ...)
+
         try:
             data = self._execute()  # 자식 클래스 구현
             return MjuUnivAuthResult(success, data=data)
-        except PageParsingError as e:
-            return MjuUnivAuthResult(error_code=PARSE_ERROR, ...)
+        except ParsingError as e:
+            return MjuUnivAuthResult(error_code=ErrorCode.PARSE_ERROR, ...)
         except NetworkError as e:
-            return MjuUnivAuthResult(error_code=NETWORK_ERROR, ...)
+            return MjuUnivAuthResult(error_code=ErrorCode.NETWORK_ERROR, ...)
         except SessionExpiredError as e:
-            return MjuUnivAuthResult(error_code=SESSION_EXPIRED, ...)
+            return MjuUnivAuthResult(error_code=ErrorCode.SESSION_EXPIRED, ...)
         except Exception as e:
-            return MjuUnivAuthResult(error_code=UNKNOWN, ...)
+            return MjuUnivAuthResult(error_code=ErrorCode.UNKNOWN, ...)
     
     def _execute(self) -> T:
         """자식 클래스에서 구현 - 예외를 raise"""
@@ -375,7 +435,7 @@ auth = MjuUnivAuth("학번", "비번", verbose=True)
 ### 1단계: Domain 모델 생성
 
 ```python
-# domain/new_data.py
+# mju_univ_auth/domain/new_data.py
 @dataclass
 class NewData:
     field1: str = ""
@@ -387,8 +447,13 @@ class NewData:
 
 ### 2단계: Fetcher 구현
 
+`fetcher` 디렉토리 내에 새로운 fetcher 파일을 생성합니다.
+
 ```python
-# new_data_fetcher.py
+# mju_univ_auth/fetcher/new_data_fetcher.py
+from .base_fetcher import BaseFetcher
+from ..domain.new_data import NewData
+
 class NewDataFetcher(BaseFetcher[NewData]):
     def __init__(self, session, verbose=False):
         super().__init__(session)
@@ -396,18 +461,40 @@ class NewDataFetcher(BaseFetcher[NewData]):
     
     def _execute(self) -> NewData:
         # 페이지 접근, 파싱 로직
+        # response = self.session.get(...)
+        # fields = HTMLParser.parse_new_data(response.text)
         # 실패 시 적절한 예외 raise
+        # if not fields:
+        #     raise ParsingError("새로운 데이터 파싱 실패")
         return NewData.from_parsed_fields(fields)
 ```
 
 ### 3단계: Facade에 메서드 추가
 
 ```python
-# facade.py
+# mju_univ_auth/facade.py
+from .fetcher.new_data_fetcher import NewDataFetcher
+from .domain.new_data import NewData
+
 class MjuUnivAuth:
+    # ... 기존 코드 ...
+
     def get_new_data(self) -> MjuUnivAuthResult[NewData]:
-        if error := self._ensure_login('msi'):
-            return error
+        # 로그인 실패 시 저장된 에러 반환
+        if self._login_failed:
+            return self._login_error
+        # 세션이 없는 경우 에러 반환
+        if self._session is None:
+            return MjuUnivAuthResult(
+                request_succeeded=False,
+                error_code=ErrorCode.SESSION_NOT_EXIST,
+                error_message="세션이 없습니다. 먼저 login()을 호출해주세요."
+            )
+        
+        # 특정 서비스 로그인이 필요한 경우, 서비스 체크
+        # if self._service != 'msi':
+        #     return MjuUnivAuthResult(error_code=ErrorCode.SERVICE_INVALID, ...)
+
         fetcher = NewDataFetcher(self._session, self._verbose)
         return fetcher.fetch()
 ```
