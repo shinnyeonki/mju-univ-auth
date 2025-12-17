@@ -243,7 +243,8 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         # 사진
         img_tag = soup.select_one('#pictureInclude img')
         if img_tag and 'base64,' in img_tag.get('src', ''):
-            profile.photo_base64 = img_tag['src'].split('base64,')[1]
+            profile.photo_base64 = img_tag['src']
+            # profile.photo_base64 = img_tag['src'].split('base64,')[1]
 
         # 기본 정보 테이블
         profile_table = soup.select_one('#pictureInclude .flex-table')

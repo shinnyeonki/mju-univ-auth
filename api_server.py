@@ -27,16 +27,19 @@ from mju_univ_auth import (
     SessionNotExistError,
     AlreadyLoggedInError,
     ServiceNotFoundError,
-    InvalidServiceUsageError
+    InvalidServiceUsageError,
+    MjuUnivAuthError,
 )
 
 
 from mju_univ_auth import (
+    # authenticator
     StandardAuthenticator,
+    # fetcher
     StudentBasicInfoFetcher,
     StudentChangeLogFetcher,
     StudentCardFetcher,
-    MjuUnivAuthError,
+    # dto
     StudentBasicInfo,
     StudentCard,
     StudentChangeLog,
