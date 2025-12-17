@@ -85,4 +85,8 @@ result = fetcher.fetch()
 if result.success:
     log = result.data
     log.print_summary()
-```
+
+    # 중첩된 데이터 직접 접근 예시
+    print(f"\n[직접 접근 예시]")
+    print(f"학적상태: {log.academic_status.status}")
+    print(f"첫 번째 변동내역: {log.change_log_list[0].change_type if log.change_log_list else 'N/A'}")

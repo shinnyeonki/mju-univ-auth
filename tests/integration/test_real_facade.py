@@ -19,7 +19,7 @@ def test_real_get_student_card():
 
     assert result.success, f"Failed to get student card: {result.error_message}"
     assert result.data is not None
-    assert result.data.student_id == USER_ID
+    assert result.data.student_profile.student_id == USER_ID
 
 @requires_creds
 def test_real_get_student_changelog():
@@ -30,7 +30,7 @@ def test_real_get_student_changelog():
 
     assert result.success, f"Failed to get student changelog: {result.error_message}"
     assert result.data is not None
-    assert result.data.student_id == USER_ID
+    assert result.data.academic_status.student_id == USER_ID
 
 @requires_creds
 def test_real_login_chaining():
@@ -40,4 +40,4 @@ def test_real_login_chaining():
 
     assert result.success, f"Failed to get student card via chaining: {result.error_message}"
     assert result.data is not None
-    assert result.data.student_id == USER_ID
+    assert result.data.student_profile.student_id == USER_ID

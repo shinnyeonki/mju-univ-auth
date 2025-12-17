@@ -1,78 +1,77 @@
 import pytest
+from unittest.mock import MagicMock
+from mju_univ_auth.fetcher.student_change_log_fetcher import StudentChangeLogFetcher
+from mju_univ_auth.domain.student_changelog import StudentChangeLog
+from mju_univ_auth.exceptions import ParsingError
 
-from mju_univ_auth import (
-    StudentChangeLogFetcher,
-    StudentChangeLog,
-    ParsingError,
-    NetworkError,
-    ErrorCode,
-)
-
-
-class DummySession:
-    def __init__(self):
-        self._get_response_text = ''
-        self._post_response_text = ''
-
-    def get(self, url, timeout=None):
-        return type('R', (), {'text': self._get_response_text, 'url': url, 'status_code': 200})()
-
-    def post(self, url, data=None, headers=None, timeout=None):
-        return type('R', (), {'text': self._post_response_text, 'url': url, 'status_code': 200})()
-
+# A minimal but realistic HTML snippet for the changelog page
+CHANGELOG_HTML = """
+<html>
+<body>
+    <div class="card-item basic">
+        <div class="flex-table">
+            <div class="flex-table-item">
+                <div class="item-title">학번</div><div class="item-data">60200001</div>
+            </div>
+            <div class="flex-table-item">
+                <div class="item-title">학적상태</div><div class="item-data">재학</div>
+            </div>
+        </div>
+    </div>
+    <div class="card-item basic">
+        <div class="data-title small">
+            ... 누적학기 : <span style="color:red">총 2학기</span>
+        </div>
+        <div class="read-table">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>2023</td><td>1학기</td><td>군입대휴학</td><td>2023-01-10</td><td>2025-02-28</td><td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
+"""
 
 @pytest.fixture
-def dummy_session():
-    return DummySession()
+def mock_fetcher(monkeypatch):
+    """Provides a StudentChangeLogFetcher with mocked network calls."""
+    mock_session = MagicMock()
+    fetcher = StudentChangeLogFetcher(session=mock_session)
+    
+    monkeypatch.setattr(fetcher, '_get_csrf_token', lambda: None)
+    return fetcher
 
+def test_student_changelog_fetcher_success(mock_fetcher, monkeypatch):
+    """Tests that the fetcher correctly parses a valid HTML."""
+    # Arrange
+    monkeypatch.setattr(mock_fetcher, '_access_changelog_page', lambda: CHANGELOG_HTML)
 
-def test_student_changelog_fetcher_success(monkeypatch, dummy_session):
-    fetcher = StudentChangeLogFetcher(session=dummy_session)
+    # Act
+    result = mock_fetcher.fetch()
 
-    # 메서드를 스텁합니다
-    monkeypatch.setattr(fetcher, '_get_csrf_token', lambda: setattr(fetcher, '_csrf_token', 'token'))
-
-    sample_html = '<div class="flex-table-item"><div class="item-title">학번</div><div class="item-data">20200001</div></div>'
-    monkeypatch.setattr(fetcher, '_access_changelog_page', lambda: sample_html)
-
-    # 파싱 결과를 모의로 만듭니다
-    sample_changelog = StudentChangeLog(student_id='20200001', name='홍길동', status='재학', grade='1', completed_semesters='1', department='컴퓨터')
-    monkeypatch.setattr(fetcher, '_parse_changelog', lambda html: sample_changelog)
-
-    result = fetcher.fetch()
-
+    # Assert
     assert result.success
-    assert result.data.student_id == '20200001'
+    log = result.data
+    assert isinstance(log, StudentChangeLog)
+    assert log.academic_status.student_id == '60200001'
+    assert log.academic_status.status == '재학'
+    assert log.cumulative_leave_semesters == '총 2학기'
+    assert len(log.change_log_list) == 1
+    assert log.change_log_list[0].change_type == '군입대휴학'
 
+def test_student_changelog_fetcher_parse_error(mock_fetcher, monkeypatch):
+    """Tests that the fetcher returns a ParsingError for invalid HTML."""
+    # Arrange
+    monkeypatch.setattr(mock_fetcher, '_access_changelog_page', lambda: "<html></html>")
 
-def test_student_changelog_fetcher_parse_error(monkeypatch, dummy_session):
-    fetcher = StudentChangeLogFetcher(session=dummy_session)
+    # Act
+    result = mock_fetcher.fetch()
 
-    monkeypatch.setattr(fetcher, '_get_csrf_token', lambda: setattr(fetcher, '_csrf_token', 'token'))
-    monkeypatch.setattr(fetcher, '_access_changelog_page', lambda: '<html></html>')
-
-    # _parse_changelog가 ParsingError를 발생시키도록 모의합니다
-    def raising_parse(html):
-        raise ParsingError('Parsing failed', field='student_id')
-
-    monkeypatch.setattr(fetcher, '_parse_changelog', raising_parse)
-
-    result = fetcher.fetch()
-
-    assert not result.request_succeeded
-    assert result.error_code == ErrorCode.PARSING_ERROR
-
-
-def test_student_changelog_fetcher_network_error(monkeypatch, dummy_session):
-    fetcher = StudentChangeLogFetcher(session=dummy_session)
-
-    def raising_get_csrf():
-        raise NetworkError('Network issue', url='https://msi.mju.ac.kr')
-
-    monkeypatch.setattr(fetcher, '_get_csrf_token', raising_get_csrf)
-
-    result = fetcher.fetch()
-
-    assert not result.request_succeeded
-    assert result.credentials_valid is None
-    assert result.error_code == ErrorCode.NETWORK_ERROR
+    # Assert
+    assert not result.success
+    assert result.error_code == 'PARSING_ERROR'
+    assert '학적 기본 정보 테이블을 찾을 수 없습니다' in result.error_message

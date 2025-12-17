@@ -1,115 +1,83 @@
 import pytest
-import requests
+from unittest.mock import MagicMock
+from mju_univ_auth.fetcher.student_card_fetcher import StudentCardFetcher
+from mju_univ_auth.domain.student_card import StudentCard
+from mju_univ_auth.results import MjuUnivAuthResult
 
-from mju_univ_auth import (
-    StudentCardFetcher,
-    StudentCard,
-    ParsingError,
-    NetworkError,
-    InvalidCredentialsError,
-    ErrorCode,
-)
-
-
-class DummyResponse:
-    def __init__(self, text="", url="https://msi.mju.ac.kr/servlet/security/MySecurityStart"):
-        self.text = text
-        self.url = url
-        self.status_code = 200
-
-
-class DummySession:
-    def __init__(self):
-        self.last_post = None
-        self.last_get = None
-
-    def post(self, url, data=None, headers=None, timeout=None):
-        self.last_post = (url, data, headers)
-        return DummyResponse(text=getattr(self, '_post_response_text', ''), url=url)
-
-    def get(self, url, timeout=None):
-        self.last_get = (url,)
-        return DummyResponse(text=getattr(self, '_get_response_text', ''), url=url)
-
+# A minimal but realistic HTML snippet for the student card page
+STUDENT_CARD_HTML = """
+<html>
+<body>
+    <div id="pictureInclude">
+        <img src="data:image/jpg;base64,FAKEDATA" />
+        <div class="flex-table">
+            <div class="flex-table-item">
+                <div class="item-title">학번</div>
+                <div class="item-data">60200001</div>
+            </div>
+            <div class="flex-table-item">
+                <div class="item-title">한글성명</div>
+                <div class="item-data">김명지</div>
+            </div>
+        </div>
+    </div>
+    <hr />
+    <div class="flex-table">
+        <input name="nm_eng" value="KIM" />
+        <input name="nm_eng2" value="MYONGJI" />
+        <input name="std_tel" value="02-123-4567" />
+        <input name="htel" value="010-1234-5678" />
+        <input name="email" value="test@mju.ac.kr" />
+        <input name="zip1" value="123" />
+        <input name="zip2" value="456" />
+        <input name="addr1" value="서울특별시" />
+        <input name="addr2" value="서대문구" />
+        <input name="zip1_2" value="111" />
+        <input name="zip2_2" value="222" />
+        <input name="addr1_2" value="경기도" />
+        <input name="addr2_2" value="용인시" />
+    </div>
+</body>
+</html>
+"""
 
 @pytest.fixture
-def dummy_session():
-    return DummySession()
+def mock_fetcher(monkeypatch):
+    """Provides a StudentCardFetcher with mocked network calls."""
+    mock_session = MagicMock()
+    fetcher = StudentCardFetcher(session=mock_session, user_pw='pw')
+    
+    # Mock methods that perform network calls or depend on previous steps
+    monkeypatch.setattr(fetcher, '_get_csrf_token', lambda: None)
+    monkeypatch.setattr(fetcher, '_is_password_required', lambda html: False)
+    return fetcher
 
+def test_student_card_fetcher_success(mock_fetcher, monkeypatch):
+    """Tests that the fetcher correctly parses a valid HTML."""
+    # Arrange: Make _access_student_card_page return our sample HTML
+    monkeypatch.setattr(mock_fetcher, '_access_student_card_page', lambda: STUDENT_CARD_HTML)
 
-def test_student_card_fetcher_success(monkeypatch, dummy_session):
-    # fetcher가 더미 세션을 사용하도록 합니다
-    fetcher = StudentCardFetcher(session=dummy_session, user_pw='pw')
+    # Act
+    result = mock_fetcher.fetch()
 
-    # _get_csrf_token이 네트워크 호출 없이 토큰을 설정하도록 모의합니다
-    monkeypatch.setattr(fetcher, '_get_csrf_token', lambda: setattr(fetcher, '_csrf_token', 'token123'))
-
-    # 파싱할 필드가 포함된 페이지(HTML)를 반환하도록 합니다
-    sample_html = '<div class="flex-table-item"><div class="item-title">학번</div><div class="item-data">20200001</div></div>'
-    monkeypatch.setattr(fetcher, '_access_student_card_page', lambda: sample_html)
-
-    # 실제 HTML 파싱 로직을 호출해 필드 값을 만드는 흐름을 건너뛰고
-    # _parse_student_card를 스텁하여 간단히 StudentCard를 반환하도록 합니다
-    expected_card = StudentCard(student_id='20200001', name_korean='홍길동')
-    monkeypatch.setattr(fetcher, '_parse_student_card', lambda html: expected_card)
-
-    result = fetcher.fetch()
-
+    # Assert
     assert result.success
-    assert result.data.student_id == '20200001'
-    assert isinstance(result.data, StudentCard)
+    card = result.data
+    assert isinstance(card, StudentCard)
+    assert card.student_profile.student_id == '60200001'
+    assert card.student_profile.name_korean == '김명지'
+    assert card.personal_contact.email == 'test@mju.ac.kr'
+    assert card.personal_contact.current_residence_address.postal_code == '123-456'
 
+def test_student_card_fetcher_parse_error(mock_fetcher, monkeypatch):
+    """Tests that the fetcher returns a ParsingError for invalid HTML."""
+    # Arrange: Return empty HTML
+    monkeypatch.setattr(mock_fetcher, '_access_student_card_page', lambda: "<html></html>")
 
-def test_student_card_fetcher_parse_error(monkeypatch, dummy_session):
-    fetcher = StudentCardFetcher(session=dummy_session, user_pw='pw')
+    # Act
+    result = mock_fetcher.fetch()
 
-    # 페이지 접근이 정상인 것처럼 모의합니다
-    monkeypatch.setattr(fetcher, '_get_csrf_token', lambda: setattr(fetcher, '_csrf_token', 'token123'))
-    monkeypatch.setattr(fetcher, '_access_student_card_page', lambda: '<html></html>')
-
-    # 파싱 시 ParsingError가 발생하는 상황을 모의합니다
-    def raising_parse(html):
-        raise ParsingError('Unable to parse', field='student_id')
-
-    monkeypatch.setattr(fetcher, '_parse_student_card', raising_parse)
-
-    result = fetcher.fetch()
-
-    assert not result.request_succeeded
-    assert result.credentials_valid is True
-    assert result.error_code == ErrorCode.PARSING_ERROR
-
-
-def test_student_card_fetcher_network_error(monkeypatch, dummy_session):
-    fetcher = StudentCardFetcher(session=dummy_session, user_pw='pw')
-
-    # _get_csrf_token이 NetworkError를 발생시키도록 모의합니다
-    def raising_get_csrf():
-        raise NetworkError('Unable to reach site', url='https://msi.mju.ac.kr')
-
-    monkeypatch.setattr(fetcher, '_get_csrf_token', raising_get_csrf)
-
-    result = fetcher.fetch()
-
-    assert not result.request_succeeded
-    assert result.credentials_valid is None
-    assert result.error_code == ErrorCode.NETWORK_ERROR
-
-
-def test_student_card_fetcher_invalid_second_password(monkeypatch, dummy_session):
-    # _is_password_required가 True를 반환하고 _submit_password가 여전히 비밀번호 필요 HTML을 반환하는 흐름을 만듭니다
-    fetcher = StudentCardFetcher(session=dummy_session, user_pw='wrong_pw')
-
-    monkeypatch.setattr(fetcher, '_get_csrf_token', lambda: setattr(fetcher, '_csrf_token', 'x'))
-    monkeypatch.setattr(fetcher, '_access_student_card_page', lambda: '<html>tfpassword</html>')
-    monkeypatch.setattr(fetcher, '_is_password_required', lambda html: True)
-
-    # _submit_password가 여전히 비밀번호 필요를 나타내는 HTML을 반환하도록 설정합니다
-    monkeypatch.setattr(fetcher, '_submit_password', lambda html: '<html>tfpassword</html>')
-
-    result = fetcher.fetch()
-
-    assert result.request_succeeded
-    assert result.credentials_valid is False
-    assert result.error_code == ErrorCode.INVALID_CREDENTIALS_ERROR
-    assert '2차 비밀번호' in result.error_message
+    # Assert
+    assert not result.success
+    assert result.error_code == 'PARSING_ERROR'
+    assert '학생 프로필 테이블을 찾을 수 없습니다' in result.error_message

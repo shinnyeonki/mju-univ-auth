@@ -129,15 +129,3 @@ class TestHTMLParser:
         assert HTMLParser.has_signin_form('<div id="signin-form">...<div id="input-password">') is True
         assert HTMLParser.has_logout_button("<a>로그아웃</a>") is True
         assert HTMLParser.has_logout_button("<a>logout</a>") is True
-
-    def test_parse_student_card_fields(self):
-        fields = HTMLParser.parse_student_card_fields(STUDENT_CARD_HTML)
-        assert fields['photo_base64'] == 'my-photo-data'
-        assert fields['학번'] == '60200001'
-        assert fields['한글성명'] == '홍길동'
-        assert fields['email'] == 'test@mju.ac.kr'
-
-    def test_parse_change_log_fields(self):
-        fields = HTMLParser.parse_change_log_fields(CHANGE_LOG_HTML)
-        assert fields['학번'] == '60200001'
-        assert fields['학적상태'] == '재학'

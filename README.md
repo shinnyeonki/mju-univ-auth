@@ -273,8 +273,9 @@ if not result:
 
 성공 시 `result.data` 필드에 담기는 데이터 타입은 다음과 같습니다:
 
-- **StudentCard**: 학생카드 정보 (학번, 이름, 학과 등)
-- **StudentChangeLog**: 학적변동내역 (학적상태, 이수학기 등)
+- **StudentBasicInfo**: MSI 대시보드의 기본 정보 (소속, 학년, 최근 접속 시간 등)
+- **StudentCard**: 학생카드 상세 정보. 내부에 `StudentProfile`과 `PersonalContact` 객체가 중첩되어 있습니다.
+- **StudentChangeLog**: 학적변동내역. 내부에 `AcademicStatus`와 `ChangeLogEntry` 리스트가 중첩되어 있습니다.
 - **Session**: requests.Session 객체 (세션 획득 시)
 
 ---

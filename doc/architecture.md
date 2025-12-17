@@ -430,29 +430,32 @@ auth = MjuUnivAuth("학번", "비번", verbose=True)
 
 ## 7. 확장 가이드
 
-새로운 데이터 조회 기능을 추가하려면:
+새로운 데이터 조회 기능을 추가하려면 다음 단계를 따릅니다.
 
 ### 1단계: Domain 모델 생성
 
+`mju_univ_auth/domain/` 디렉토리에 새로운 데이터 클래스를 정의합니다. 이 클래스는 순수하게 데이터만 담아야 합니다.
+
 ```python
 # mju_univ_auth/domain/new_data.py
+from dataclasses import dataclass
+
 @dataclass
 class NewData:
     field1: str = ""
-    
-    @classmethod
-    def from_parsed_fields(cls, fields):
-        return cls(field1=fields.get('필드1'))
+    field2: int = 0
 ```
 
 ### 2단계: Fetcher 구현
 
-`fetcher` 디렉토리 내에 새로운 fetcher 파일을 생성합니다.
+`fetcher` 디렉토리 내에 새로운 fetcher 파일을 생성합니다. `BaseFetcher`를 상속받고 `_execute()` 메서드를 구현합니다. 파싱 로직은 이 메서드 안에서 `BeautifulSoup` 등을 사용하여 직접 처리합니다.
 
 ```python
 # mju_univ_auth/fetcher/new_data_fetcher.py
+from bs4 import BeautifulSoup
 from .base_fetcher import BaseFetcher
 from ..domain.new_data import NewData
+from ..exceptions import ParsingError, NetworkError
 
 class NewDataFetcher(BaseFetcher[NewData]):
     def __init__(self, session, verbose=False):
@@ -460,16 +463,29 @@ class NewDataFetcher(BaseFetcher[NewData]):
         self._verbose = verbose
     
     def _execute(self) -> NewData:
-        # 페이지 접근, 파싱 로직
-        # response = self.session.get(...)
-        # fields = HTMLParser.parse_new_data(response.text)
-        # 실패 시 적절한 예외 raise
-        # if not fields:
-        #     raise ParsingError("새로운 데이터 파싱 실패")
-        return NewData.from_parsed_fields(fields)
+        # 1. 페이지 접근
+        try:
+            response = self.session.get("https://service.mju.ac.kr/path/to/data")
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise NetworkError("데이터 페이지 접근 실패", original_error=e)
+
+        # 2. HTML 파싱 및 데이터 추출
+        soup = BeautifulSoup(response.text, 'lxml')
+        field1_tag = soup.find('div', id='field1')
+        if not field1_tag:
+            raise ParsingError("field1에 해당하는 태그를 찾을 수 없습니다.")
+        
+        # 3. 도메인 객체 생성 및 반환
+        return NewData(
+            field1=field1_tag.text.strip(),
+            field2=123 # 예시
+        )
 ```
 
 ### 3단계: Facade에 메서드 추가
+
+`mju_univ_auth/facade.py`의 `MjuUnivAuth` 클래스에 새로운 조회 메서드를 추가합니다.
 
 ```python
 # mju_univ_auth/facade.py
@@ -480,16 +496,10 @@ class MjuUnivAuth:
     # ... 기존 코드 ...
 
     def get_new_data(self) -> MjuUnivAuthResult[NewData]:
-        # 로그인 실패 시 저장된 에러 반환
-        if self._login_failed:
-            return self._login_error
-        # 세션이 없는 경우 에러 반환
+        # 로그인 실패 또는 세션 부재 시 에러 반환
+        if self._login_failed: return self._login_error
         if self._session is None:
-            return MjuUnivAuthResult(
-                request_succeeded=False,
-                error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
-                error_message="세션이 없습니다. 먼저 login()을 호출해주세요."
-            )
+            return MjuUnivAuthResult(error_code=ErrorCode.SESSION_NOT_EXIST_ERROR, ...)
         
         # 특정 서비스 로그인이 필요한 경우, 서비스 체크
         # if self._service != 'msi':
@@ -498,6 +508,10 @@ class MjuUnivAuth:
         fetcher = NewDataFetcher(self._session, self._verbose)
         return fetcher.fetch()
 ```
+
+### 4단계: 패키지 export
+
+`mju_univ_auth/domain/__init__.py`, `mju_univ_auth/fetcher/__init__.py`, `mju_univ_auth/__init__.py` 파일의 `__all__` 리스트에 새로 추가한 클래스들을 등록하여 외부에서 import할 수 있도록 합니다.
 
 ## 8. 요약
 

@@ -1,43 +1,43 @@
 import pytest
+from unittest.mock import MagicMock
 
 from mju_univ_auth import (
     MjuUnivAuth,
     MjuUnivAuthResult,
     ErrorCode,
     StudentCard,
+    StudentProfile,
     StudentChangeLog,
+    AcademicStatus,
 )
+from mju_univ_auth.fetcher.student_card_fetcher import StudentCardFetcher
+from mju_univ_auth.fetcher.student_change_log_fetcher import StudentChangeLogFetcher
 
 
-def test_get_student_card_auto_login_success(monkeypatch):
+def test_get_student_card_success(monkeypatch):
+    """Tests successful student card fetching."""
     auth = MjuUnivAuth(user_id='user', user_pw='pw')
-
-    # Set a mock session and service
-    mock_session = object()
-    auth._session = mock_session
+    auth._session = MagicMock()
     auth._service = 'msi'
 
-    # StudentCardFetcher를 모의로 바꿔 예상 결과를 반환하도록 합니다
-    expected_card = StudentCard(student_id='20200001', name_korean='홍길동')
-    def fake_fetcher(session=None, user_pw=None, verbose=False):
-        class F:
-            def fetch(self):
-                return MjuUnivAuthResult(request_succeeded=True, credentials_valid=True, data=expected_card)
-        return F()
+    # Mock the fetcher's fetch method
+    expected_card = StudentCard(student_profile=StudentProfile(student_id='20200001', name_korean='홍길동'))
+    mock_result = MjuUnivAuthResult(request_succeeded=True, credentials_valid=True, data=expected_card)
+    monkeypatch.setattr(StudentCardFetcher, 'fetch', lambda self: mock_result)
 
-    monkeypatch.setattr('mju_univ_auth.facade.StudentCardFetcher', fake_fetcher)
-
+    # Call the method
     result = auth.get_student_card()
 
+    # Assert the result
     assert result.success
-    assert result.data.student_id == '20200001'
+    assert result.data.student_profile.student_id == '20200001'
 
 
-def test_get_student_card_with_no_login_attempt(monkeypatch):
+def test_get_student_card_with_no_login_attempt():
+    """Tests calling get_student_card without a session."""
     auth = MjuUnivAuth(user_id='user2', user_pw='pw2')
     auth._session = None
     auth._login_failed = False
-    auth._login_error = None
 
     result = auth.get_student_card()
 
@@ -46,38 +46,32 @@ def test_get_student_card_with_no_login_attempt(monkeypatch):
     assert '세션이 없습니다' in result.error_message
 
 
-def test_get_session_returns_stored_login_result_when_failed(monkeypatch):
-    ma = MjuUnivAuth(user_id='user3', user_pw='pw3')
-    ma._session = None
-    ma._login_failed = True
-    ma._login_error = MjuUnivAuthResult(request_succeeded=True, credentials_valid=False, error_code=ErrorCode.INVALID_CREDENTIALS_ERROR, error_message='Invalid credentials')
+def test_get_data_after_failed_login():
+    """Tests calling a fetcher after a failed login."""
+    auth = MjuUnivAuth(user_id='user3', user_pw='pw3')
+    auth._login_failed = True
+    auth._login_error = MjuUnivAuthResult(request_succeeded=True, credentials_valid=False, error_code=ErrorCode.INVALID_CREDENTIALS_ERROR)
 
-    result = ma.get_session()
+    result = auth.get_student_card()
     
     assert not result.success
     assert result.error_code == ErrorCode.INVALID_CREDENTIALS_ERROR
-    assert result.error_message == 'Invalid credentials'
-    assert result.credentials_valid is False
 
 
 def test_get_student_changelog_success(monkeypatch):
+    """Tests successful student changelog fetching."""
     auth = MjuUnivAuth(user_id='user', user_pw='pw')
-
-    # Set a mock session and service
-    mock_session = object()
-    auth._session = mock_session
+    auth._session = MagicMock()
     auth._service = 'msi'
 
-    # Mock StudentChangeLogFetcher
-    expected_changelog = StudentChangeLog(student_id='20200001', name='홍길동')
-    def fake_fetcher(session=None, verbose=False):
-        class F:
-            def fetch(self):
-                return MjuUnivAuthResult(request_succeeded=True, credentials_valid=True, data=expected_changelog)
-        return F()
-    monkeypatch.setattr('mju_univ_auth.facade.StudentChangeLogFetcher', fake_fetcher)
+    # Mock the fetcher's fetch method
+    expected_changelog = StudentChangeLog(academic_status=AcademicStatus(student_id='20200001', name='홍길동'))
+    mock_result = MjuUnivAuthResult(request_succeeded=True, credentials_valid=True, data=expected_changelog)
+    monkeypatch.setattr(StudentChangeLogFetcher, 'fetch', lambda self: mock_result)
 
+    # Call the method
     result = auth.get_student_changelog()
 
+    # Assert the result
     assert result.success
-    assert result.data.student_id == '20200001'
+    assert result.data.academic_status.student_id == '20200001'

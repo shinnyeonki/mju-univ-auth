@@ -54,7 +54,7 @@ def test_get_data_with_invalid_service_usage(auth_instance):
     result = auth_instance.get_student_card()
 
     assert not result.success
-    assert result.error_code == ErrorCode.SERVICE_UNKNOWN_ERROR
+    assert result.error_code == ErrorCode.INVALID_SERVICE_USAGE_ERROR
     assert "MSI 서비스로 로그인된 세션이 아닙니다" in result.error_message
 
 
