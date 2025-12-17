@@ -4,12 +4,11 @@
 순수 데이터 클래스로, 네트워크 로직을 포함하지 않습니다.
 """
 
-from dataclasses import dataclass, field
 from typing import Dict, Any, List
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class AcademicStatus:
+class AcademicStatus(BaseModel):
     """학적 기본 정보"""
     student_id: str = ""
     name: str = ""
@@ -19,8 +18,7 @@ class AcademicStatus:
     department: str = ""
 
 
-@dataclass
-class ChangeLogEntry:
+class ChangeLogEntry(BaseModel):
     """변동 내역 리스트 항목"""
     year: str = ""
     semester: str = ""
@@ -30,39 +28,12 @@ class ChangeLogEntry:
     reason: str = ""
 
 
-@dataclass
-class StudentChangeLog:
+class StudentChangeLog(BaseModel):
     """학적변동내역 정보 데이터 클래스"""
-    academic_status: AcademicStatus = field(default_factory=AcademicStatus)
+    academic_status: AcademicStatus = Field(default_factory=AcademicStatus)
     cumulative_leave_semesters: str = ""
-    change_log_list: List[ChangeLogEntry] = field(default_factory=list)
-    raw_data: Dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """데이터 클래스를 딕셔너리로 변환합니다."""
-        return {
-            'academic_status': {
-                'student_id': self.academic_status.student_id,
-                'name': self.academic_status.name,
-                'status': self.academic_status.status,
-                'grade': self.academic_status.grade,
-                'completed_semesters': self.academic_status.completed_semesters,
-                'department': self.academic_status.department,
-            },
-            'leave_history': {
-                'cumulative_leave_semesters': self.cumulative_leave_semesters,
-            },
-            'change_log_list': [
-                {
-                    'year': entry.year,
-                    'semester': entry.semester,
-                    'change_type': entry.change_type,
-                    'change_date': entry.change_date,
-                    'expiry_date': entry.expiry_date,
-                    'reason': entry.reason,
-                } for entry in self.change_log_list
-            ]
-        }
+    change_log_list: List[ChangeLogEntry] = Field(default_factory=list)
+    raw_data: Dict[str, Any] = Field(default_factory=dict)
 
     def print_summary(self) -> None:
         """학적변동내역 정보 요약 출력"""

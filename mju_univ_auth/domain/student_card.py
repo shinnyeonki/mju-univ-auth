@@ -4,31 +4,28 @@
 순수 데이터 클래스로, 네트워크 로직을 포함하지 않습니다.
 """
 
-from dataclasses import dataclass, field
 from typing import Dict, Any
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class Address:
+class Address(BaseModel):
     """주소 정보"""
     postal_code: str = ""
     address: str = ""
 
 
-@dataclass
-class PersonalContact:
+class PersonalContact(BaseModel):
     """개인 연락처 정보"""
     english_surname: str = ""
     english_givenname: str = ""
     phone_number: str = ""
     mobile_number: str = ""
     email: str = ""
-    current_residence_address: Address = field(default_factory=Address)
-    resident_registration_address: Address = field(default_factory=Address)
+    current_residence_address: Address = Field(default_factory=Address)
+    resident_registration_address: Address = Field(default_factory=Address)
 
 
-@dataclass
-class StudentProfile:
+class StudentProfile(BaseModel):
     """학생 프로필 정보"""
     student_id: str = ""
     name_korean: str = ""
@@ -40,42 +37,11 @@ class StudentProfile:
     photo_base64: str = ""
 
 
-@dataclass
-class StudentCard:
+class StudentCard(BaseModel):
     """학생카드 정보 데이터 클래스"""
-    student_profile: StudentProfile = field(default_factory=StudentProfile)
-    personal_contact: PersonalContact = field(default_factory=PersonalContact)
-    raw_data: Dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """데이터 클래스를 딕셔너리로 변환합니다."""
-        return {
-            'student_profile': {
-                'student_id': self.student_profile.student_id,
-                'name_korean': self.student_profile.name_korean,
-                'grade': self.student_profile.grade,
-                'enrollment_status': self.student_profile.enrollment_status,
-                'college_department': self.student_profile.college_department,
-                'academic_advisor': self.student_profile.academic_advisor,
-                'student_designed_major_advisor': self.student_profile.student_designed_major_advisor,
-                'photo_base64': self.student_profile.photo_base64,
-            },
-            'personal_contact': {
-                'english_surname': self.personal_contact.english_surname,
-                'english_givenname': self.personal_contact.english_givenname,
-                'phone_number': self.personal_contact.phone_number,
-                'mobile_number': self.personal_contact.mobile_number,
-                'email': self.personal_contact.email,
-                'current_residence_address': {
-                    'postal_code': self.personal_contact.current_residence_address.postal_code,
-                    'address': self.personal_contact.current_residence_address.address,
-                },
-                'resident_registration_address': {
-                    'postal_code': self.personal_contact.resident_registration_address.postal_code,
-                    'address': self.personal_contact.resident_registration_address.address,
-                },
-            },
-        }
+    student_profile: StudentProfile = Field(default_factory=StudentProfile)
+    personal_contact: PersonalContact = Field(default_factory=PersonalContact)
+    raw_data: Dict[str, Any] = Field(default_factory=dict)
 
     def print_summary(self) -> None:
         """학생 정보 요약 출력"""

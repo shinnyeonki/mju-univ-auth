@@ -333,8 +333,10 @@ def main():
     # print(f"msi 세션 유효성 검사 시간: {end_time - start_time:.4f}초") # 평균 0.3초 내외
     
     result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").get_student_basicinfo()
-    # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").get_student_card()
-    # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_changelog()
+    print(result)
+    result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").get_student_card()
+    print(result)
+    result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_changelog()
     print(result)
     
     

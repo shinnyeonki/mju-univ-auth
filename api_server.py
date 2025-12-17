@@ -9,12 +9,13 @@ import hashlib
 import threading
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, TypeVar, Generic
 from importlib.metadata import version
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from pydantic.generics import GenericModel
 from loguru import logger
 from requests import Session
 
@@ -33,9 +34,13 @@ from mju_univ_auth import (
 
 from mju_univ_auth import (
     StandardAuthenticator,
-    StudentCardFetcher,
+    StudentBasicInfoFetcher,
     StudentChangeLogFetcher,
+    StudentCardFetcher,
     MjuUnivAuthError,
+    StudentBasicInfo,
+    StudentCard,
+    StudentChangeLog,
 )
 
 # 1. --- 로깅 설정 ---
@@ -57,13 +62,13 @@ LOG_FORMAT = (
 logger.add(
     str(LOG_DIR / "mju_api_{time:YYYY-MM-DD}.log"),
     rotation="1 day",
-    retention="30 days",
+    retention="30 years",
     level="INFO",
     format=LOG_FORMAT,
 )
 
 
-# 2. --- FastAPI 앱 및 기본 설정 ---
+# 2. --- FastAPI 앱 및 Pydantic 모델 ---
 try:
     MJU_AUTH_VERSION = version('mju_univ_auth')
 except Exception:
@@ -71,13 +76,31 @@ except Exception:
 
 app = FastAPI(
     title="MJU Univ Auth API",
-    description="명지대학교 학생 인증 및 정보 조회 API (저수준 컴포넌트 기반).",
+    description="명지대학교 학생 인증 및 정보 조회 API.",
     version=MJU_AUTH_VERSION,
 )
 
 class AuthRequest(BaseModel):
     user_id: str
     user_pw: str
+
+T = TypeVar('T')
+
+class SuccessResponse(GenericModel, Generic[T]):
+    request_succeeded: bool = True
+    credentials_valid: bool = True
+    data: T
+    error_code: Optional[ErrorCode] = None
+    error_message: str = ""
+    success: bool = True
+
+class ErrorResponse(BaseModel):
+    request_succeeded: bool
+    credentials_valid: bool
+    data: Optional[Any] = None
+    error_code: str
+    error_message: str
+    success: bool = False
 
 
 # 3. --- 핵심 로직 클래스 ---
@@ -95,7 +118,7 @@ class PasswordManager:
 
 class SessionCache:
     """
-    스레드 안전한 인메모리 세션 캐시.
+    스레드 안전 인메모리 세션 캐시.
     사용자 ID별로 (세션, 비밀번호 해시, 타임스탬프)를 저장합니다.
     """
     def __init__(self):
@@ -168,7 +191,7 @@ class DataCache:
             return user_cache.get(data_type)
         return None
 
-    def set(self, user_id: str, data_type: str, data: Dict[str, Any], password_hash: str):
+    def set(self, user_id: str, data_type: str, data: Any, password_hash: str):
         """캐시에 데이터를 저장합니다."""
         if user_id not in self._cache:
             self._cache[user_id] = {}
@@ -272,7 +295,7 @@ class MjuAuthService:
             result = fetcher.fetch()
 
             if result.success:
-                return result.data.to_dict()
+                return result.data
 
             # 세션 만료 등으로 조회가 실패했을 수 있으므로 세션을 무효화하고 재시도합니다.
             self._session_cache.invalidate(user_id)
@@ -281,17 +304,17 @@ class MjuAuthService:
             result = fetcher.fetch()
 
             if result.success:
-                return result.data.to_dict()
+                return result.data
             
             self._raise_from_result(result)
 
         except MjuUnivAuthError as e:
             raise e
-
-    def get_student_card(self, user_id: str, user_pw: str) -> Dict[str, Any]:
-        """학생증 정보를 조회하고 결과를 캐싱합니다."""
+    
+    def get_student_basicinfo(self, user_id: str, user_pw: str) -> StudentBasicInfo:
+        """학적기본정보를 조회하고 결과를 캐싱합니다."""
         password_hash = PasswordManager.hash_password(user_pw)
-        data_type = "student-card"
+        data_type = "student-basicinfo"
 
         with self._data_cache.get_lock(user_id):
             cached_entry = self._data_cache.get(user_id, data_type)
@@ -299,12 +322,12 @@ class MjuAuthService:
                 return cached_entry["data"]
 
             data = self._fetch_with_retry(
-                user_id, user_pw, StudentCardFetcher, user_pw=user_pw
+                user_id, user_pw, StudentBasicInfoFetcher
             )
             self._data_cache.set(user_id, data_type, data, password_hash)
             return data
 
-    def get_student_changelog(self, user_id: str, user_pw: str) -> Dict[str, Any]:
+    def get_student_changelog(self, user_id: str, user_pw: str) -> StudentChangeLog:
         """학적변동내역을 조회하고 결과를 캐싱합니다."""
         password_hash = PasswordManager.hash_password(user_pw)
         data_type = "student-changelog"
@@ -320,13 +343,27 @@ class MjuAuthService:
             self._data_cache.set(user_id, data_type, data, password_hash)
             return data
 
+    def get_student_card(self, user_id: str, user_pw: str) -> StudentCard:
+        """학생증 정보를 조회하고 결과를 캐싱합니다."""
+        password_hash = PasswordManager.hash_password(user_pw)
+        data_type = "student-card"
+
+        with self._data_cache.get_lock(user_id):
+            cached_entry = self._data_cache.get(user_id, data_type)
+            if self._data_cache.is_valid(cached_entry, password_hash):
+                return cached_entry["data"]
+
+            data = self._fetch_with_retry(
+                user_id, user_pw, StudentCardFetcher, user_pw=user_pw
+            )
+            self._data_cache.set(user_id, data_type, data, password_hash)
+            return data
+
 # 전역 서비스 및 캐시 인스턴스 생성
 session_cache = SessionCache()
 data_cache = DataCache()
 auth_service = MjuAuthService(session_cache, data_cache)
 
-
-# 4. --- API 미들웨어 ---
 
 # 4. --- API 미들웨어 ---
 
@@ -434,24 +471,41 @@ async def root():
         "description": "명지대학교 학생 인증 및 정보 조회 API. /docs 에서 문서를 확인하세요.",
     }
 
-@app.post("/api/v1/student-card", summary="학생증 정보 조회")
-async def get_student_card(req: AuthRequest):
+
+@app.post(
+    "/api/v1/student-basicinfo",
+    summary="학적변동내역 조회",
+    response_model=SuccessResponse[StudentBasicInfo],
+    responses={
+        401: {"model": ErrorResponse, "description": "INVALID_CREDENTIALS_ERROR 인증 실패 (자격 증명 오류, 세션 만료 등)"},
+        409: {"model": ErrorResponse, "description": "로그인 상태에서 재 로그인등 서버 상태와 충돌 요청"},
+        422: {"model": ErrorResponse, "description": "SERVICE_NOT_FOUND_ERROR, 처리 불가능한 요청 (잘못된 서비스 이름) 내부 로직 문제"},
+        500: {"model": ErrorResponse, "description": "PARSING_ERROR, UNKNOWN_ERROR 서버 내부 오류 (파싱 실패 등)"},
+        502: {"model": ErrorResponse, "description": "NETWORK_ERROR 게이트웨이 오류 (업스트림 네트워크 문제)"},
+    }
+)
+async def get_student_basicinfo(req: AuthRequest):
     """
-    사용자 인증 후 학생증 정보를 조회합니다.
+    사용자 인증 후 학적변동내역을 조회합니다.
     - **user_id**: 학번
     - **user_pw**: myiweb 비밀번호
     """
-    data = auth_service.get_student_card(req.user_id, req.user_pw)
-    return {
-        "request_succeeded": True,
-        "credentials_valid": True,
-        "data": data,
-        "error_code": None,
-        "error_message": "",
-        "success": True,
-    }
+    data = auth_service.get_student_basicinfo(req.user_id, req.user_pw)
+    return {"data": data}
 
-@app.post("/api/v1/student-changelog", summary="학적변동내역 조회")
+
+@app.post(
+    "/api/v1/student-changelog",
+    summary="학적변동내역 조회",
+    response_model=SuccessResponse[StudentChangeLog],
+    responses={
+        401: {"model": ErrorResponse, "description": "INVALID_CREDENTIALS_ERROR 인증 실패 (자격 증명 오류, 세션 만료 등)"},
+        409: {"model": ErrorResponse, "description": "로그인 상태에서 재 로그인등 서버 상태와 충돌 요청"},
+        422: {"model": ErrorResponse, "description": "SERVICE_NOT_FOUND_ERROR, 처리 불가능한 요청 (잘못된 서비스 이름) 내부 로직 문제"},
+        500: {"model": ErrorResponse, "description": "PARSING_ERROR, UNKNOWN_ERROR 서버 내부 오류 (파싱 실패 등)"},
+        502: {"model": ErrorResponse, "description": "NETWORK_ERROR 게이트웨이 오류 (업스트림 네트워크 문제)"},
+    }
+)
 async def get_student_changelog(req: AuthRequest):
     """
     사용자 인증 후 학적변동내역을 조회합니다.
@@ -459,14 +513,28 @@ async def get_student_changelog(req: AuthRequest):
     - **user_pw**: myiweb 비밀번호
     """
     data = auth_service.get_student_changelog(req.user_id, req.user_pw)
-    return {
-        "request_succeeded": True,
-        "credentials_valid": True,
-        "data": data,
-        "error_code": None,
-        "error_message": "",
-        "success": True,
+    return {"data": data}
+
+@app.post(
+    "/api/v1/student-card",
+    summary="학생증 정보 조회",
+    response_model=SuccessResponse[StudentCard],
+    responses={
+        401: {"model": ErrorResponse, "description": "INVALID_CREDENTIALS_ERROR 인증 실패 (자격 증명 오류, 세션 만료 등)"},
+        409: {"model": ErrorResponse, "description": "로그인 상태에서 재 로그인등 서버 상태와 충돌 요청"},
+        422: {"model": ErrorResponse, "description": "SERVICE_NOT_FOUND_ERROR, 처리 불가능한 요청 (잘못된 서비스 이름) 내부 로직 문제"},
+        500: {"model": ErrorResponse, "description": "PARSING_ERROR, UNKNOWN_ERROR 서버 내부 오류 (파싱 실패 등)"},
+        502: {"model": ErrorResponse, "description": "NETWORK_ERROR 게이트웨이 오류 (업스트림 네트워크 문제)"},
     }
+)
+async def get_student_card(req: AuthRequest):
+    """
+    사용자 인증 후 학생증 정보를 조회합니다.
+    - **user_id**: 학번
+    - **user_pw**: myiweb 비밀번호
+    """
+    data = auth_service.get_student_card(req.user_id, req.user_pw)
+    return {"data": data}
 
 
 # 6. --- 서버 실행 ---
