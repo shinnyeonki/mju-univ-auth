@@ -84,7 +84,7 @@ class AuthRequest(BaseModel):
 
 class Config:
     SESSION_TIMEOUT_SECONDS = 1800  # 30분
-    DATA_CACHE_TIMEOUT_SECONDS = 900  # 15분
+    DATA_CACHE_TIMEOUT_SECONDS = 1200  # 20분
 
 class PasswordManager:
     """비밀번호 해싱 및 검증을 담당합니다."""
