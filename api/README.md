@@ -29,8 +29,8 @@
     "department": "컴퓨터정보통신공학부 컴퓨터공학전공",
     "category": "대학",
     "grade": "4",
-    "last_access_time": "2025-12-17 23:38:20",
-    "last_access_ip": "222.233.240.27",
+    "last_access_time": "2025-xx-xx xx:xx:xx",
+    "last_access_ip": "xxx.xxx.xxx.xxx",
     "raw_html_data": "<div class=\"card-item main-user-info\">...</div>"
   },
   "error_code": null,
