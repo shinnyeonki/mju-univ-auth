@@ -233,8 +233,9 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
             logger.info("[Step A-5] 학생 정보 파싱")
 
         soup = BeautifulSoup(html, 'lxml')
+        card_item = soup.find('div', class_='card-item basic')
         card = StudentCard()
-        card.raw_data['html'] = html
+        card.raw_html_data = str(card_item) if card_item else ''
 
         # 1. 학생 프로필 정보 파싱
         profile = StudentProfile()

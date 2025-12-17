@@ -41,7 +41,7 @@ class StudentCard(BaseModel):
     """학생카드 정보 데이터 클래스"""
     student_profile: StudentProfile = Field(default_factory=StudentProfile)
     personal_contact: PersonalContact = Field(default_factory=PersonalContact)
-    raw_data: Dict[str, Any] = Field(default_factory=dict)
+    raw_html_data: str = ""
 
     def print_summary(self) -> None:
         """학생 정보 요약 출력"""

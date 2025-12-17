@@ -133,8 +133,9 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
             logger.info("[Step B-3] 학적변동내역 정보 파싱")
 
         soup = BeautifulSoup(html, 'lxml')
+        card_items = soup.find_all('div', class_='card-item basic')
         changelog = StudentChangeLog()
-        changelog.raw_data['html'] = html
+        changelog.raw_html_data = "\n".join(map(str, card_items)) if card_items else ''
 
         # 1. 학적 기본 정보 파싱
         status = AcademicStatus()

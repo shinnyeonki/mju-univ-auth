@@ -5,7 +5,6 @@
 MSI 메인 페이지의 대시보드 요약 정보를 담는 순수 데이터 클래스입니다.
 """
 
-from typing import Dict, Any
 from pydantic import BaseModel, Field
 
 
@@ -16,7 +15,7 @@ class StudentBasicInfo(BaseModel):
     grade: str = Field(default="", description="학년")
     last_access_time: str = Field(default="", description="최근 접속 시간")
     last_access_ip: str = Field(default="", description="최근 접속 IP")
-    raw_data: Dict[str, Any] = Field(default_factory=dict)
+    raw_html_data: str = ""
 
     def print_summary(self) -> None:
         """학생 기본 정보 요약 출력"""

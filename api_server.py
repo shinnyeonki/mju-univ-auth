@@ -474,7 +474,7 @@ async def root():
 
 @app.post(
     "/api/v1/student-basicinfo",
-    summary="학적변동내역 조회",
+    summary="학생 기본 정보 조회",
     response_model=SuccessResponse[StudentBasicInfo],
     responses={
         401: {"model": ErrorResponse, "description": "INVALID_CREDENTIALS_ERROR 인증 실패 (자격 증명 오류, 세션 만료 등)"},

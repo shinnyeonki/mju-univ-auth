@@ -62,12 +62,14 @@ pip install mju-univ-auth
 
 ```python
 # 예: LMS 로그인 후 세션 획득
-result = MjuUnivAuth("학번", "비밀번호").login("lms").session
+result = MjuUnivAuth("학번", "비밀번호").login("lms").get_session()
+# 예: MSI 로그인후 기본 정보 파싱
+result = MjuUnivAuth("학번", "비밀번호").login("msi").get_basic_info()
 # 예: MSI 로그인후 학생카드 파싱
-result = MjuUnivAuth("학번", "비밀번호").login("lms").get_student_card()
+result = MjuUnivAuth("학번", "비밀번호").login("msi").get_student_card()
 # 예: MSI 로그인후 학적 변경 파싱
-result = MjuUnivAuth("학번", "비밀번호").login("lms").get_student_changelog()
-```
+result = MjuUnivAuth("학번", "비밀번호").login("msi").get_student_changelog()
+"""
 
 
 ## 4. 기본 사용법 (고수준 API)
@@ -77,7 +79,7 @@ result = MjuUnivAuth("학번", "비밀번호").login("lms").get_student_changelo
 result = MjuUnivAuth(user_id="학번", user_pw="비밀번호").login("msi").get_student_card()
 ```
 
-**중요**: 모든 데이터 조회(`get_student_card`, `get_student_changelog` 등) 전에 반드시 `.login()` 메서드를 호출하여 세션을 초기화해야 합니다.
+**중요**: 모든 데이터 조회(`get_student_basicinfo`, `get_student_card`, `get_student_changelog` 등) 전에 반드시 `.login()` 메서드를 호출하여 세션을 초기화해야 합니다.
 
 ### 3.1. 데이터 조회 (학생카드, 학적변동내역)
 
@@ -94,9 +96,9 @@ card_result = auth.login("msi").get_student_card()
 
 if card_result.success:
     card = card_result.data
-    print(f"이름: {card.name_korean}")
-    print(f"학번: {card.student_id}")
-    print(f"학과: {card.department}")
+    print(f"이름: {card.student_profile.name_korean}")
+    print(f"학번: {card.student_profile.student_id}")
+    print(f"학과: {card.student_profile.department}")
 else:
     print(f"학생카드 조회 실패: {card_result.error_message}")
 
@@ -120,7 +122,7 @@ else:
 from mju_univ_auth import MjuUnivAuth
 
 auth = MjuUnivAuth(user_id="학번", user_pw="비밀번호")
-result = auth.login("lms").get_session()
+result = auth.login("lms")
 
 if result.success:
     session = result.data  # requests.Session 객체
@@ -220,7 +222,7 @@ class ErrorCode(str, Enum):
     UNKNOWN_ERROR = "UNKNOWN_ERROR" # 원인을 특정할 수 없는 라이브러리 내부의 일반적인 오류.
 ```
 
-### 5.4. request_succeeded와 credentials_valid 분리 이유
+### 5.3. request_succeeded와 credentials_valid 분리 이유
 
 이 두 필드를 분리하여 다양한 상황을 명확히 구분할 수 있습니다:
 
@@ -233,6 +235,68 @@ class ErrorCode(str, Enum):
 | 학생카드 조회 성공 | `True` | `True` | 정상 |
 | HTML 파싱 실패 | `False` | `True` | 인증은 유효하나 파싱 오류 |
 
+### 5.4. data 필드
+성공 시 `data` 필드에 담기는 데이터 타입은 호출한 메서드에 따라 다릅니다:
+- `.get_session()` : `requests.Session` 객체
+- `.get_student_basicinfo()` : `StudentBasicInfo` 객체
+- `.get_student_card()` : `StudentCard` 객체
+- `.get_student_changelog()` : `StudentChangeLog` 객체
+#### 5.4.1. 데이터 필드 구조
+##### 기본 메인 페이지 정보
+`student_basicinfo`
+
+- **dashboard_summary** (대시보드 요약 정보)
+	- department (Department / 소속)
+	- category (Category / 구분)
+	- grade (Grade / 학년)
+	- last_access_time (Recent Access Time / 최근 접속 시간)
+	- last_access_ip (Recent Access IP / 최근 접속 IP)
+
+#### 학적 변동 내역
+`student_changelog`
+
+- **academic_status** (학적 기본 정보)
+	- student_id (Student ID / 학번)
+	- name (Name / 성명)
+	- status (Academic Status / 학적상태)
+	- grade (Grade / 학년)
+	- completed_semesters (Completed Semesters / 이수학기)
+	- department (Department / 학부(과))
+- **leave_history** (휴학 누적 현황)
+	- cumulative_leave_semesters (Cumulative Leave Semesters / 휴학 누적 학기)
+- **change_log_list** (변동 내역 리스트)
+	- year (Year / 년도)
+	- semester (Semester / 학기)
+	- change_type (Change Type / 변동유형)
+	- change_date (Change Date / 변동일자)
+	- expiry_date (Expiry Date / 만료일자)
+	- reason (Reason / 사유)
+
+##### 학생카드
+`student-card`
+
+- **student_profile** (학생 상세 정보)
+	- student_id (Student ID / 학번)
+	- name_korean (Korean Name / 한글성명)
+	- grade (Grade / 학년)
+	- enrollment_status (Enrollment Status / 학적상태)
+	- college_department (College & Department / 학부(과))
+	- academic_advisor (Academic Advisor / 상담교수)
+	- student_designed_major_advisor (Student Designed Major Advisor / 학생설계전공지도교수)
+	- photo_base64 (Photo Base64 / 증명사진)
+- **personal_contact** (개인 연락처 정보)
+	- english_surname (English Surname / 영문성명-성)
+	- english_givenname (English Given Name / 영문성명-이름)
+	- phone_number (Phone Number / 전화번호)
+	- mobile_number (Mobile Number / 휴대폰)
+	- email (E-Mail / 이메일)
+	- current_residence_address (Current Residence Address / 현거주지 주소)
+		- postal_code (Postal Code / 우편번호)
+		- address (Address / 주소)
+	- resident_registration_address (Resident Registration Address / 주민등록 주소)
+		- postal_code (Postal Code / 우편번호)
+		- address (Address / 주소)
+
 ### 5.5. 실제 사용 예시
 
 ```python
@@ -243,13 +307,13 @@ result = auth.login("msi").get_student_card()
 
 # 방법 1: success 프로퍼티로 간단히 확인
 if result.success:
-    print(result.data.name_korean)
+    print(result.data.student_profile.name_korean)
 else:
     print(f"실패: {result.error_message}")
 
 # 방법 2: 에러 코드별 세분화 처리
 if result.success:
-    print(result.data.name_korean)
+    print(result.data.student_profile.name_korean)
 elif result.error_code == ErrorCode.INVALID_CREDENTIALS_ERROR:
     print("아이디 또는 비밀번호가 틀렸습니다.")
 elif result.error_code == ErrorCode.NETWORK_ERROR:
@@ -266,17 +330,6 @@ else:
 if not result:
     print("조회 실패")
 ```
-
----
-
-## 7. 성공 시 데이터 필드 내용
-
-성공 시 `result.data` 필드에 담기는 데이터 타입은 다음과 같습니다:
-
-- **StudentBasicInfo**: MSI 대시보드의 기본 정보 (소속, 학년, 최근 접속 시간 등)
-- **StudentCard**: 학생카드 상세 정보. 내부에 `StudentProfile`과 `PersonalContact` 객체가 중첩되어 있습니다.
-- **StudentChangeLog**: 학적변동내역. 내부에 `AcademicStatus`와 `ChangeLogEntry` 리스트가 중첩되어 있습니다.
-- **Session**: requests.Session 객체 (세션 획득 시)
 
 ---
 
@@ -305,9 +358,17 @@ curl --location --request POST 'https://sso1.mju.ac.kr/mju/userCheck.do' \
 
 ## 10. 이종 언어를 위한 API 서버
 
-Python이 아닌 다른 언어에서 사용하려면 API 서버를 활용하세요.
+Python이 아닌 다른 언어에서 이 라이브러리의 기능을 사용하고 싶다면, 함께 제공되는 `api_server.py`를 실행하여 REST API 서버로 활용할 수 있습니다.
 
-[서버 문서](api/README.md)
+이 API 서버는 [FastAPI](https://fastapi.tiangolo.com/)로 구축되었습니다.
+
+[서버 readme](api/README.md)
+
+[API 서버 코드](api/api_server.py)
+
+[API 서버 대화형 문서](https://mju-univ-auth.shinnk.kro.kr/docs)
+
+[API 서버 명세](https://mju-univ-auth.shinnk.kro.kr/redoc)
 
 ---
 

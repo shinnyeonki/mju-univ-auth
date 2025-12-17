@@ -88,7 +88,7 @@ class StudentBasicInfoFetcher(BaseFetcher[StudentBasicInfo]):
             raise ParsingError("기본 정보 카드('main-user-info')를 찾을 수 없습니다.")
 
         info = StudentBasicInfo()
-        info.raw_data['html'] = str(info_card)
+        info.raw_html_data = str(info_card) if info_card else ''
 
         info_cells = info_card.find_all('div', class_='info-cell')
         data = {}

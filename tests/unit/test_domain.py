@@ -31,7 +31,7 @@ class TestStudentCard:
             student_profile=StudentProfile(student_id="123", name_korean="홍길동"),
             personal_contact=PersonalContact(email="test@test.com")
         )
-        d = card.to_dict()
+        d = card.model_dump()
         assert isinstance(d, dict)
         assert d['student_profile']['student_id'] == "123"
         assert d['personal_contact']['email'] == "test@test.com"
@@ -55,8 +55,8 @@ class TestStudentChangeLog:
             cumulative_leave_semesters="2학기",
             change_log_list=[ChangeLogEntry(year="2023")]
         )
-        d = log.to_dict()
+        d = log.model_dump()
         assert isinstance(d, dict)
         assert d['academic_status']['student_id'] == "123"
-        assert d['leave_history']['cumulative_leave_semesters'] == "2학기"
+        assert d['cumulative_leave_semesters'] == "2학기"
         assert len(d['change_log_list']) == 1

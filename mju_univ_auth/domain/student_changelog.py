@@ -33,7 +33,7 @@ class StudentChangeLog(BaseModel):
     academic_status: AcademicStatus = Field(default_factory=AcademicStatus)
     cumulative_leave_semesters: str = ""
     change_log_list: List[ChangeLogEntry] = Field(default_factory=list)
-    raw_data: Dict[str, Any] = Field(default_factory=dict)
+    raw_html_data: str = ""
 
     def print_summary(self) -> None:
         """학적변동내역 정보 요약 출력"""

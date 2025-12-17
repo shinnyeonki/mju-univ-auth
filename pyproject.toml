@@ -28,5 +28,6 @@ dev = [
     "fastapi>=0.123.0",
     "loguru>=0.7.3",
     "uvicorn>=0.38.0",
+    "requests_mock>=1.12.1",
 ]
 
