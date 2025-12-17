@@ -1,6 +1,6 @@
 [project]
 name = "mju_univ_auth"
-version = "0.8.2"
+version = "0.8.3"
 description = "명지대학교 학생 인증 및 정보 조회를 위한 Python 라이브러리"
 readme = "README.md"
 requires-python = ">=3.10"
