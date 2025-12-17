@@ -15,7 +15,6 @@ from importlib.metadata import version
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from pydantic.generics import GenericModel
 from loguru import logger
 from requests import Session
 
@@ -86,7 +85,7 @@ class AuthRequest(BaseModel):
 
 T = TypeVar('T')
 
-class SuccessResponse(GenericModel, Generic[T]):
+class SuccessResponse(BaseModel, Generic[T]):
     request_succeeded: bool = True
     credentials_valid: bool = True
     data: T
