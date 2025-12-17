@@ -7,11 +7,12 @@ MSI 서비스에서 학생카드 정보를 조회합니다.
 import re
 import logging
 import requests
+from bs4 import BeautifulSoup
 
 from ..fetcher.base_fetcher import BaseFetcher
 from ..config import SERVICES, TIMEOUT_CONFIG
 from ..infrastructure.parser import HTMLParser
-from ..domain.student_card import StudentCard
+from ..domain.student_card import StudentCard, StudentProfile, PersonalContact, Address
 from ..exceptions import (
     NetworkError,
     ParsingError,
@@ -194,8 +195,8 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         if self._verbose:
             logger.info("[Step A-4] 리다이렉트 폼 처리")
 
-        action_match = re.search(r'action\s*=\s*["\'](https[^"\']+)["\']', html)
-        csrf_match = re.search(r'name=["\']_csrf["\'][^>]*value=["\']([^"]+)["\']', html)
+        action_match = re.search(r'action\s*=\s*["\"](https[^"]+)["\"]', html)
+        csrf_match = re.search(r'name=["\"]_csrf["\"][^>]*value=["\"]([^"]+)["\"]', html)
 
         action = action_match.group(1) if action_match else ''
         if not action or 'Sum00Svl01getStdCard' not in action:
@@ -231,13 +232,77 @@ class StudentCardFetcher(BaseFetcher[StudentCard]):
         if self._verbose:
             logger.info("[Step A-5] 학생 정보 파싱")
 
-        fields = HTMLParser.parse_student_card_fields(html)
+        soup = BeautifulSoup(html, 'lxml')
+        card = StudentCard()
+        card.raw_data['html'] = html
 
-        if '학번' not in fields or not fields['학번']:
+        # 1. 학생 프로필 정보 파싱
+        profile = StudentProfile()
+        
+        # 사진
+        img_tag = soup.select_one('#pictureInclude img')
+        if img_tag and 'base64,' in img_tag.get('src', ''):
+            profile.photo_base64 = img_tag['src'].split('base64,')[1]
+
+        # 기본 정보 테이블
+        profile_table = soup.select_one('#pictureInclude .flex-table')
+        if not profile_table:
+            raise ParsingError("학생 프로필 테이블을 찾을 수 없습니다.")
+
+        fields = {}
+        for item in profile_table.find_all('div', class_='flex-table-item'):
+            title = item.find('div', class_='item-title').get_text(strip=True)
+            value = item.find('div', class_='item-data').get_text(strip=True)
+            fields[title] = value
+        
+        profile.student_id = fields.get('학번', '')
+        profile.name_korean = fields.get('한글성명', '')
+        profile.grade = fields.get('학년', '').replace('학년', '').strip()
+        profile.enrollment_status = fields.get('학적상태', '')
+        profile.college_department = fields.get('학부(과)', '')
+        profile.academic_advisor = fields.get('상담교수', '')
+        advisor_text = fields.get('학생설계전공지도교수', '')
+        profile.student_designed_major_advisor = advisor_text.replace('()', '').strip()
+
+        card.student_profile = profile
+
+        # 2. 개인 연락처 정보 파싱
+        contact = PersonalContact()
+        contact_table = soup.select_one('hr + .flex-table')
+        if not contact_table:
+            raise ParsingError("개인 연락처 테이블을 찾을 수 없습니다.")
+
+        contact.english_surname = contact_table.find('input', {'name': 'nm_eng'}).get('value', '')
+        contact.english_givenname = contact_table.find('input', {'name': 'nm_eng2'}).get('value', '')
+        contact.phone_number = contact_table.find('input', {'name': 'std_tel'}).get('value', '')
+        contact.mobile_number = contact_table.find('input', {'name': 'htel'}).get('value', '')
+        contact.email = contact_table.find('input', {'name': 'email'}).get('value', '')
+
+        # 현거주지 주소
+        zip1 = contact_table.find('input', {'name': 'zip1'}).get('value', '')
+        zip2 = contact_table.find('input', {'name': 'zip2'}).get('value', '')
+        addr1 = contact_table.find('input', {'name': 'addr1'}).get('value', '')
+        addr2 = contact_table.find('input', {'name': 'addr2'}).get('value', '')
+        contact.current_residence_address = Address(
+            postal_code=f"{zip1}-{zip2}",
+            address=f"{addr1} {addr2}".strip()
+        )
+
+        # 주민등록 주소
+        zip1_2 = contact_table.find('input', {'name': 'zip1_2'}).get('value', '')
+        zip2_2 = contact_table.find('input', {'name': 'zip2_2'}).get('value', '')
+        addr1_2 = contact_table.find('input', {'name': 'addr1_2'}).get('value', '')
+        addr2_2 = contact_table.find('input', {'name': 'addr2_2'}).get('value', '')
+        contact.resident_registration_address = Address(
+            postal_code=f"{zip1_2}-{zip2_2}",
+            address=f"{addr1_2} {addr2_2}".strip()
+        )
+        
+        card.personal_contact = contact
+
+        if not card.student_profile.student_id:
             raise ParsingError("학생 정보를 찾을 수 없습니다 (학번 필드 누락).", field="student_id")
-
-        student_card = StudentCard.from_parsed_fields(fields)
 
         if self._verbose:
             logger.info("✓ 학생 정보 파싱 완료")
-        return student_card
+        return card

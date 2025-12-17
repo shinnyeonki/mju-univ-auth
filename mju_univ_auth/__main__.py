@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 
 from .facade import MjuUnivAuth
 from .authenticator.standard_authenticator import StandardAuthenticator
+from .fetcher.student_basicinfo_fetcher import StudentBasicInfoFetcher
 from .fetcher.student_card_fetcher import StudentCardFetcher
 from .fetcher.student_change_log_fetcher import StudentChangeLogFetcher
 from .config import SERVICES
@@ -173,8 +174,8 @@ def test_fetchers_with_session(user_id: str, user_pw: str) -> bool:
     
     if card_result.success:
         print(f"{Colors.GREEN}✓ StudentCardFetcher 테스트 성공!{Colors.END}")
-        print(f"  {Colors.CYAN}학번:{Colors.END} {card_result.data.student_id}")
-        print(f"  {Colors.CYAN}이름:{Colors.END} {card_result.data.name_korean}")
+        print(f"  {Colors.CYAN}학번:{Colors.END} {card_result.data.student_profile.student_id}")
+        print(f"  {Colors.CYAN}이름:{Colors.END} {card_result.data.student_profile.name_korean}")
     else:
         print(f"{Colors.RED}✗ StudentCardFetcher 테스트 실패: {card_result.error_message}{Colors.END}")
         return False
@@ -186,8 +187,8 @@ def test_fetchers_with_session(user_id: str, user_pw: str) -> bool:
     
     if changelog_result.success:
         print(f"{Colors.GREEN}✓ StudentChangeLogFetcher 테스트 성공!{Colors.END}")
-        print(f"  {Colors.CYAN}학번:{Colors.END} {changelog_result.data.student_id}")
-        print(f"  {Colors.CYAN}학적상태:{Colors.END} {changelog_result.data.status}")
+        print(f"  {Colors.CYAN}학번:{Colors.END} {changelog_result.data.academic_status.student_id}")
+        print(f"  {Colors.CYAN}학적상태:{Colors.END} {changelog_result.data.academic_status.status}")
     else:
         print(f"{Colors.RED}✗ StudentChangeLogFetcher 테스트 실패: {changelog_result.error_message}{Colors.END}")
         return False
@@ -230,7 +231,7 @@ def test_chaining_api(user_id: str, user_pw: str) -> bool:
     
     if changelog_result.success:
         print(f"{Colors.GREEN}✓ 체이닝 조회 성공!{Colors.END}")
-        print(f"  {Colors.CYAN}학번:{Colors.END} {changelog_result.data.student_id}")
+        print(f"  {Colors.CYAN}학번:{Colors.END} {changelog_result.data.academic_status.student_id}")
     else:
         print(f"{Colors.RED}✗ 체이닝 조회 실패: {changelog_result.error_message}{Colors.END}")
         return False
@@ -309,13 +310,13 @@ def main():
     
     # logging.getLogger().setLevel(logging.DEBUG)
     # # 테스트 실행
-    # high_level_ok = test_high_level_api(user_id, user_pw)
-    # service_results = test_all_services_login(user_id, user_pw)
-    # fetcher_ok = test_fetchers_with_session(user_id, user_pw)
-    # chaining_ok = test_chaining_api(user_id, user_pw)
+    high_level_ok = test_high_level_api(user_id, user_pw)
+    service_results = test_all_services_login(user_id, user_pw)
+    fetcher_ok = test_fetchers_with_session(user_id, user_pw)
+    chaining_ok = test_chaining_api(user_id, user_pw)
     
     # # 결과 요약
-    # print_summary(high_level_ok, service_results, fetcher_ok, chaining_ok)
+    print_summary(high_level_ok, service_results, fetcher_ok, chaining_ok)
     
     
     # 각 줄의 시간을 측정
@@ -331,9 +332,9 @@ def main():
     # end_time = time.time()
     # print(f"msi 세션 유효성 검사 시간: {end_time - start_time:.4f}초") # 평균 0.3초 내외
     
-    result = MjuUnivAuth(user_id="50222100", user_pw="Jaja8794@", verbose=False).login("msi").get_student_card()
+    # result = MjuUnivAuth(user_id="50222100", user_pw="Jaja8794@", verbose=False).login("msi").get_student_card()
     # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_changelog()
-    print(result)
+    # print(result)
     
     
 

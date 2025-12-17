@@ -134,11 +134,14 @@
 | HTTP 상태 | 에러 코드 | 발생 상황 |
 |-----------|----------|-----------|
 | 401 | `INVALID_CREDENTIALS` | 학번이나 비밀번호가 잘못됨 |
-| 408 | `NETWORK_TIMEOUT`  | 학교 서버가 응답하지 않음 |
-| 502 | `NETWORK_ERROR`  | 학교 서버와 네트워크 연결 문제 |
-| 500 | `PAGE_PARSING_ERROR`  | 학교 웹페이지 구조 변경 |
-| 503 | `SESSION_EXPIRED_ERROR`  | 학교 서버 세션 만료 (재시도 필요) |
-| 500 | `INTERNAL_SERVER_ERROR` | 서버 내부 오류, 라이브러리 오류 |
+| 401 | `SESSION_NOT_EXIST_ERROR` | 로그인을 하지 않아 세션이 없는 상태 |
+| 401 | `SESSION_EXPIRED_ERROR` | 세션이 만료됨 (재로그인 필요) |
+| 403 | `INVALID_SERVICE_USAGE_ERROR` | 현재 로그인된 서비스로 해당 기능을 사용할 수 없음 |
+| 409 | `ALREADY_LOGGED_IN_ERROR` | 이미 로그인된 상태에서 다시 로그인을 시도함 |
+| 422 | `SERVICE_NOT_FOUND_ERROR` | 지원하지 않는 서비스 이름을 사용함 |
+| 502 | `NETWORK_ERROR` | 명지대 서버와 통신 실패 (타임아웃 포함) |
+| 500 | `PARSING_ERROR` | 명지대 웹페이지 구조 변경으로 파싱 실패 |
+| 500 | `UNKNOWN_ERROR` | 서버 내부 오류, 라이브러리 내부의 일반적인 오류 |
 
 ---
 

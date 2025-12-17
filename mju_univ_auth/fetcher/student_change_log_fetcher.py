@@ -6,11 +6,12 @@ MSI 서비스에서 학적변동내역을 조회합니다.
 
 import logging
 import requests
+from bs4 import BeautifulSoup
 
 from ..fetcher.base_fetcher import BaseFetcher
 from ..config import SERVICES, TIMEOUT_CONFIG
 from ..infrastructure.parser import HTMLParser
-from ..domain.student_changelog import StudentChangeLog
+from ..domain.student_changelog import StudentChangeLog, AcademicStatus, ChangeLogEntry
 from ..exceptions import (
     NetworkError,
     ParsingError,
@@ -55,7 +56,7 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
         html = self._access_changelog_page()
 
         # 3. 정보 파싱
-        changelog = self._parse_changelog(html)
+        changelog = self._parse_student_changelog(html)
 
         if self._verbose:
             logger.info("✓ 학적변동내역 정보 조회 완료")
@@ -126,17 +127,60 @@ class StudentChangeLogFetcher(BaseFetcher[StudentChangeLog]):
 
         return response.text
 
-    def _parse_changelog(self, html: str) -> StudentChangeLog:
+    def _parse_student_changelog(self, html: str) -> StudentChangeLog:
         """학적변동내역 HTML 파싱"""
         if self._verbose:
             logger.info("[Step B-3] 학적변동내역 정보 파싱")
 
-        fields = HTMLParser.parse_change_log_fields(html)
+        soup = BeautifulSoup(html, 'lxml')
+        changelog = StudentChangeLog()
+        changelog.raw_data['html'] = html
 
-        if '학번' not in fields or not fields['학번']:
+        # 1. 학적 기본 정보 파싱
+        status = AcademicStatus()
+        status_table = soup.select_one('.card-item.basic .flex-table')
+        if not status_table:
+            raise ParsingError("학적 기본 정보 테이블을 찾을 수 없습니다.")
+
+        fields = {}
+        for item in status_table.find_all('div', class_='flex-table-item'):
+            title = item.find('div', class_='item-title').get_text(strip=True)
+            value = item.find('div', class_='item-data').get_text(strip=True)
+            fields[title] = value
+        
+        status.student_id = fields.get('학번', '')
+        status.name = fields.get('성명', '')
+        status.status = fields.get('학적상태', '')
+        status.grade = fields.get('학년', '')
+        status.completed_semesters = fields.get('이수학기', '')
+        status.department = fields.get('학부(과)', '')
+        changelog.academic_status = status
+
+        # 2. 휴학 누적 현황 파싱
+        leave_span = soup.select_one('.data-title.small span')
+        if leave_span:
+            changelog.cumulative_leave_semesters = leave_span.get_text(strip=True)
+
+        # 3. 변동 내역 리스트 파싱
+        log_list = []
+        log_table = soup.select_one('.read-table table')
+        if log_table and log_table.tbody:
+            for row in log_table.tbody.find_all('tr'):
+                cols = row.find_all('td')
+                if len(cols) == 6:
+                    entry = ChangeLogEntry(
+                        year=cols[0].get_text(strip=True),
+                        semester=cols[1].get_text(strip=True),
+                        change_type=cols[2].get_text(strip=True),
+                        change_date=cols[3].get_text(strip=True),
+                        expiry_date=cols[4].get_text(strip=True),
+                        reason=cols[5].get_text(strip=True),
+                    )
+                    log_list.append(entry)
+        changelog.change_log_list = log_list
+
+        if not changelog.academic_status.student_id:
             raise ParsingError("학적변동내역 정보를 찾을 수 없습니다 (학번 필드 누락).", field="student_id")
-
-        changelog = StudentChangeLog.from_parsed_fields(fields)
 
         if self._verbose:
             logger.info("✓ 학적변동내역 정보 파싱 완료")
