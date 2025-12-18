@@ -71,8 +71,7 @@ result = MjuUnivAuth("학번", "비밀번호").login("msi").get_basic_info()
 result = MjuUnivAuth("학번", "비밀번호").login("msi").get_student_card()
 # 예: MSI 로그인후 학적 변경 파싱
 result = MjuUnivAuth("학번", "비밀번호").login("msi").get_student_changelog()
-"""
-
+```
 
 ## 4. 기본 사용법 (고수준 API)
 
