@@ -11,7 +11,7 @@ import requests
 from .authenticator.standard_authenticator import StandardAuthenticator
 from .fetcher.student_basicinfo_fetcher import StudentBasicInfoFetcher
 from .fetcher.student_card_fetcher import StudentCardFetcher
-from .fetcher.student_change_log_fetcher import StudentChangeLogFetcher
+from .fetcher.student_changelog_fetcher import StudentChangeLogFetcher
 from .domain.student_basicinfo import StudentBasicInfo
 from .domain.student_card import StudentCard
 from .domain.student_changelog import StudentChangeLog

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
-from mju_univ_auth.fetcher.student_change_log_fetcher import StudentChangeLogFetcher
+from mju_univ_auth.fetcher.student_changelog_fetcher import StudentChangeLogFetcher
 from mju_univ_auth.domain.student_changelog import StudentChangeLog
 from mju_univ_auth.exceptions import ParsingError
 

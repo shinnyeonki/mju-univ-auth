@@ -11,7 +11,7 @@ from mju_univ_auth import (
     AcademicStatus,
 )
 from mju_univ_auth.fetcher.student_card_fetcher import StudentCardFetcher
-from mju_univ_auth.fetcher.student_change_log_fetcher import StudentChangeLogFetcher
+from mju_univ_auth.fetcher.student_changelog_fetcher import StudentChangeLogFetcher
 
 
 def test_get_student_card_success(monkeypatch):

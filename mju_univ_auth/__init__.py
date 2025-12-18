@@ -30,7 +30,7 @@ from .authenticator.standard_authenticator import StandardAuthenticator
 from .fetcher.base_fetcher import BaseFetcher
 from .fetcher.student_basicinfo_fetcher import StudentBasicInfoFetcher
 from .fetcher.student_card_fetcher import StudentCardFetcher
-from .fetcher.student_change_log_fetcher import StudentChangeLogFetcher
+from .fetcher.student_changelog_fetcher import StudentChangeLogFetcher
 
 # 도메인 모델
 from .domain import (

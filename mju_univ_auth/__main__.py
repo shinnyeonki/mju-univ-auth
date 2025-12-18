@@ -27,7 +27,7 @@ from .facade import MjuUnivAuth
 from .authenticator.standard_authenticator import StandardAuthenticator
 from .fetcher.student_basicinfo_fetcher import StudentBasicInfoFetcher
 from .fetcher.student_card_fetcher import StudentCardFetcher
-from .fetcher.student_change_log_fetcher import StudentChangeLogFetcher
+from .fetcher.student_changelog_fetcher import StudentChangeLogFetcher
 from .config import SERVICES
 
 # 로깅 설정
@@ -88,7 +88,7 @@ def test_high_level_api(user_id: str, user_pw: str) -> bool:
         student_card.print_summary()
         print(f"{Colors.GREEN}✓ 학생카드 정보 조회 완료!{Colors.END}")
         print(f"\n{Colors.BOLD}[학생카드 JSON]{Colors.END}")
-        print(json.dumps(student_card.to_dict(), ensure_ascii=False, indent=2))
+        print(json.dumps(student_card.model_dump(), ensure_ascii=False, indent=2))
     else:
         print(f"{Colors.RED}✗ 학생카드 정보 조회 실패 (코드: {card_result.error_code}){Colors.END}")
         print(f"  {Colors.CYAN}에러 메시지:{Colors.END} {card_result.error_message}")
@@ -103,7 +103,7 @@ def test_high_level_api(user_id: str, user_pw: str) -> bool:
         changelog.print_summary()
         print(f"{Colors.GREEN}✓ 학적변동내역 조회 완료!{Colors.END}")
         print(f"\n{Colors.BOLD}[학적변동내역 JSON]{Colors.END}")
-        print(json.dumps(changelog.to_dict(), ensure_ascii=False, indent=2))
+        print(json.dumps(changelog.model_dump(), ensure_ascii=False, indent=2))
     else:
         print(f"{Colors.RED}✗ 학적변동내역 조회 실패 (코드: {changelog_result.error_code}){Colors.END}")
         print(f"  {Colors.CYAN}에러 메시지:{Colors.END} {changelog_result.error_message}")
@@ -309,14 +309,14 @@ def main():
         return
     
     # logging.getLogger().setLevel(logging.DEBUG)
-    # # 테스트 실행
-    # high_level_ok = test_high_level_api(user_id, user_pw)
-    # service_results = test_all_services_login(user_id, user_pw)
-    # fetcher_ok = test_fetchers_with_session(user_id, user_pw)
-    # chaining_ok = test_chaining_api(user_id, user_pw)
+    # 테스트 실행
+    high_level_ok = test_high_level_api(user_id, user_pw)
+    service_results = test_all_services_login(user_id, user_pw)
+    fetcher_ok = test_fetchers_with_session(user_id, user_pw)
+    chaining_ok = test_chaining_api(user_id, user_pw)
     
-    # # 결과 요약
-    # print_summary(high_level_ok, service_results, fetcher_ok, chaining_ok)
+    # 결과 요약
+    print_summary(high_level_ok, service_results, fetcher_ok, chaining_ok)
     
     
     # 각 줄의 시간을 측정
@@ -332,16 +332,16 @@ def main():
     # end_time = time.time()
     # print(f"msi 세션 유효성 검사 시간: {end_time - start_time:.4f}초") # 평균 0.3초 내외
     
-    result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").get_session()
-    print(result)
-    result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").session
-    print(result)
-    result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").get_student_basicinfo()
-    print(result)
-    result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").get_student_card()
-    print(result)
-    result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_changelog()
-    print(result)
+    # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").get_session()
+    # print(result)
+    # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").session
+    # print(result)
+    # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").get_student_basicinfo()
+    # print(result)
+    # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=False).login("msi").get_student_card()
+    # print(result)
+    # result = MjuUnivAuth(user_id=user_id, user_pw=user_pw, verbose=True).login("msi").get_student_changelog()
+    # print(result)
     
     
 

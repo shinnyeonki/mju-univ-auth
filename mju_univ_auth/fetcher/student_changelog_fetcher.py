@@ -8,7 +8,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 
-from ..fetcher.base_fetcher import BaseFetcher
+from .base_fetcher import BaseFetcher
 from ..config import SERVICES, TIMEOUT_CONFIG
 from ..infrastructure.parser import HTMLParser
 from ..domain.student_changelog import StudentChangeLog, AcademicStatus, ChangeLogEntry
