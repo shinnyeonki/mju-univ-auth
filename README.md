@@ -122,8 +122,7 @@ else:
 ```python
 from mju_univ_auth import MjuUnivAuth
 
-auth = MjuUnivAuth(user_id="학번", user_pw="비밀번호")
-result = auth.login("lms")
+result = MjuUnivAuth(user_id="학번", user_pw="비밀번호").login("lms").get_session()
 
 if result.success:
     session = result.data  # requests.Session 객체
@@ -380,4 +379,4 @@ Python이 아닌 다른 언어에서 이 라이브러리의 기능을 사용하�
 ## 주의사항
 
 - **개인 정보 보호**: 비밀번호를 코드에 직접 작성하지 마세요. 환경 변수나 `.env` 파일을 사용하세요.
-- **책임 있는 사용**: 이 라이브러리를 악용하지 마세요. 개인 학사 관리 목적으로만 사용하세요.
+- **책임 있는 사용**: 이 라이브러리를 악용하지 마세요.
