@@ -321,10 +321,11 @@ class BaseFetcher(Generic[T]):
 네트워크 로직 없이 **순수 데이터**만 담습니다.
 
 ```python
-@dataclass
-class StudentCard:
-    student_id: str = ""
-    name_korean: str = ""
+from pydantic import BaseModel, Field
+
+class StudentCard(BaseModel):
+    student_id: str = Field(default="", description="학번")
+    name_korean: str = Field(default="", description="한글 이름")
     # ... 필드들
     
     @property
@@ -332,12 +333,12 @@ class StudentCard:
         """계산된 속성"""
         return f"{self.name_english_first} {self.name_english_last}"
     
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """직렬화 지원"""
-        return {...}
+        return self.model_dump()
     
     @classmethod
-    def from_parsed_fields(cls, fields: Dict) -> 'StudentCard':
+    def from_parsed_fields(cls, fields: dict) -> 'StudentCard':
         """팩토리 메서드"""
         return cls(
             student_id=fields.get('학번', ''),
@@ -438,12 +439,11 @@ auth = MjuUnivAuth("학번", "비번", verbose=True)
 
 ```python
 # mju_univ_auth/domain/new_data.py
-from dataclasses import dataclass
+from pydantic import BaseModel, Field
 
-@dataclass
-class NewData:
-    field1: str = ""
-    field2: int = 0
+class NewData(BaseModel):
+    field1: str = Field(default="", description="필드1 설명")
+    field2: int = Field(default=0, description="필드2 설명")
 ```
 
 ### 2단계: Fetcher 구현
