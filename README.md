@@ -362,15 +362,15 @@ curl --location --request POST 'https://sso1.mju.ac.kr/mju/userCheck.do' \
 
 Python이 아닌 다른 언어에서 이 라이브러리의 기능을 사용하고 싶다면
 1. 함께 제공되는 `api_server.py`를 본인이 직접 실행하거나
-2. 이미 배포된 [공개 API 서버](https://mju-univ-auth.shinnk.kro.kr/docs)를 이용할 수 있습니다.
+2. 저의 개인적인 서버에 배포된 [공개 API 서버](https://mju-univ-auth.shinnk.mmv.kr/docs)를 이용할 수 있습니다.
 
 [서버 readme](api/README.md)
 
 [API 서버 코드](api/api_server.py)
 
-[API 서버 대화형 문서](https://mju-univ-auth.shinnk.kro.kr/docs)
+[API 서버 대화형 문서](https://mju-univ-auth.shinnk.mmv.kr/docs)
 
-[API 서버 명세](https://mju-univ-auth.shinnk.kro.kr/redoc)
+[API 서버 명세](https://mju-univ-auth.shinnk.mmv.kr/redoc)
 
 ---
 

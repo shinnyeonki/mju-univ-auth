@@ -2,7 +2,7 @@
 
 명지대학교 학생 인증 및 정보 조회 API입니다.
 
-**베이스 URL:** `https://mju-univ-auth.shinnk.kro.kr`
+**베이스 URL:** `https://mju-univ-auth.shinnk.mmv.kr`
 
 ---
 
@@ -10,7 +10,7 @@
 
 ### 1. 학생 기본 정보 조회
 
-**POST** `https://mju-univ-auth.shinnk.kro.kr/api/v1/student-basicinfo`
+**POST** `https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-basicinfo`
 
 **요청:**
 ```json
@@ -64,7 +64,7 @@
 
 ### 2. 학생카드 정보 조회
 
-**POST** `https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card`
+**POST** `https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-card`
 
 **요청:**
 ```json
@@ -154,7 +154,7 @@
 
 ### 3. 학적변동내역 조회
 
-**POST** `https://mju-univ-auth.shinnk.kro.kr/api/v1/student-changelog`
+**POST** `https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-changelog`
 
 **요청:**
 ```json
@@ -239,21 +239,21 @@
 
 #### 학생 기본 정보 조회
 ```bash
-curl -X POST "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-basicinfo" \
+curl -X POST "https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-basicinfo" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "60xxxxxx", "user_pw": "your_password"}'
 ```
 
 #### 학생카드 정보 조회
 ```bash
-curl -X POST "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card" \
+curl -X POST "https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-card" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "60xxxxxx", "user_pw": "your_password"}'
 ```
 
 #### 학적변동내역 조회
 ```bash
-curl -X POST "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-changelog" \
+curl -X POST "https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-changelog" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "60xxxxxx", "user_pw": "your_password"}'
 ```
@@ -264,19 +264,19 @@ import requests
 
 # 학생 기본 정보 조회
 response = requests.post(
-  "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-basicinfo",
+  "https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-basicinfo",
   json={"user_id": "60xxxxxx", "user_pw": "your_password"}
 )
 
 # 학생카드 정보 조회
 response = requests.post(
-  "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card",
+  "https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-card",
   json={"user_id": "60xxxxxx", "user_pw": "your_password"}
 )
 
 # 학적변동내역 조회
 response = requests.post(
-  "https://mju-univ-auth.shinnk.kro.kr/api/v1/student-changelog",
+  "https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-changelog",
   json={"user_id": "60xxxxxx", "user_pw": "your_password"}
 )
 
@@ -290,7 +290,7 @@ else:
 ### JavaScript
 ```javascript
 // 학생 기본 정보 조회
-fetch('https://mju-univ-auth.shinnk.kro.kr/api/v1/student-basicinfo', {
+fetch('https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-basicinfo', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ user_id: '60xxxxxx', user_pw: 'your_password' })
@@ -305,7 +305,7 @@ fetch('https://mju-univ-auth.shinnk.kro.kr/api/v1/student-basicinfo', {
   });
 
 // 학생카드 정보 조회
-fetch('https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card', {
+fetch('https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-card', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ user_id: '60xxxxxx', user_pw: 'your_password' })
@@ -320,7 +320,7 @@ fetch('https://mju-univ-auth.shinnk.kro.kr/api/v1/student-card', {
   });
 
 // 학적변동내역 조회
-fetch('https://mju-univ-auth.shinnk.kro.kr/api/v1/student-changelog', {
+fetch('https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-changelog', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ user_id: '60xxxxxx', user_pw: 'your_password' })
