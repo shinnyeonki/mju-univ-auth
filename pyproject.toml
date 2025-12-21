@@ -1,6 +1,6 @@
 [project]
 name = "mju_univ_auth"
-version = "0.8.5"
+version = "0.8.6"
 description = "명지대학교 학생 인증 및 정보 조회를 위한 Python 라이브러리"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -13,6 +13,7 @@ dependencies = [
     "lxml>=4.9.0",
     "requests>=2.31.0",
     "python-dotenv>=1.0.0",
+    "pydantic>=2.12.5",
 ]
 
 [tool.setuptools.packages.find]
