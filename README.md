@@ -52,24 +52,24 @@ pip install mju-univ-auth
 
 | 서비스 | 코드명 | 설명 | 동작 여부 | 관련 클래스 |
 |--------|--------|------|--------|--------|
-| 명지대 통합 포털 | `"main"` | 기본 포털 | v | `StandardAuthenticator` |
-| 학사행정시스템 (MSI) | `"msi"` | 학생카드, 성적, 수강신청 등 | v | `StandardAuthenticator` |
-| LMS (LearnUs) | `"lms"` | 강의 자료, 과제 | v | `StandardAuthenticator` |
-| 캡스톤/현장실습 | `"myicap"` | MyiCAP | v | `StandardAuthenticator` |
-| 인턴십 시스템 | `"intern"` | 인턴십 관리 | v | `StandardAuthenticator` |
-| IPP (산업연계) | `"ipp"` | 산업연계 프로그램 | v | `StandardAuthenticator` |
-| U-CHECK | `"ucheck"` | 출석 확인 | v | `StandardAuthenticator` |
-| Libary | `"lib"` | 도서관 | x | 구현중 |
+| [명지대 통합 포털](https://portal.mju.ac.kr/) | `"main"` | 기본 포털 | v | `StandardAuthenticator` |
+| [학사행정시스템 (MSI)](https://msi.mju.ac.kr/) | `"msi"` | 학생카드, 성적, 수강신청 등 | v | `StandardAuthenticator` |
+| [LMS (LearnUs)](https://lms.mju.ac.kr/) | `"lms"` | 강의 자료, 과제 | v | `StandardAuthenticator` |
+| [캡스톤/현장실습](https://myicap.mju.ac.kr/) | `"myicap"` | MyiCAP | v | `StandardAuthenticator` |
+| [인턴십 시스템](https://intern.mju.ac.kr/) | `"intern"` | 인턴십 관리 | v | `StandardAuthenticator` |
+| [IPP (산업연계)](https://ipp.mju.ac.kr/) | `"ipp"` | 산업연계 프로그램 | v | `StandardAuthenticator` |
+| [U-CHECK](https://ucheck.mju.ac.kr/) | `"ucheck"` | 출석 확인 | v | `StandardAuthenticator` |
+| [Libary](https://lib.mju.ac.kr/) | `"lib"` | 도서관 | x | 구현중 |
 
 
 ```python
 # 예: LMS 로그인 후 세션 획득
 result = MjuUnivAuth("학번", "비밀번호").login("lms").get_session()
-# 예: MSI 로그인후 기본 정보 파싱
-result = MjuUnivAuth("학번", "비밀번호").login("msi").get_basic_info()
-# 예: MSI 로그인후 학생카드 파싱
+# 예: MSI 로그인후 기본 정보 파싱 ( sso login (0.8s) + msi main page (0.3s) = 1.1s )
+result = MjuUnivAuth("학번", "비밀번호").login("msi").get_student_basicinfo()
+# 예: MSI 로그인후 학생카드 파싱 ( sso login (0.8s) + msi student card page (0.4s) = 1.2s )
 result = MjuUnivAuth("학번", "비밀번호").login("msi").get_student_card()
-# 예: MSI 로그인후 학적 변경 파싱
+# 예: MSI 로그인후 학적 변경 파싱 ( sso login (0.8s) + msi student changelog page (0.8s) = 1.6s )
 result = MjuUnivAuth("학번", "비밀번호").login("msi").get_student_changelog()
 ```
 

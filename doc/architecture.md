@@ -21,14 +21,16 @@ mju_univ_auth/
 │
 ├── fetcher/                 # 데이터 조회 관련 로직
 │   ├── base_fetcher.py      # Fetcher 기반 클래스
+│   ├── student_basicinfo_fetcher.py # 학생 기본정보 조회
 │   ├── student_card_fetcher.py # 학생카드 조회
-│   └── student_change_log_fetcher.py # 학적변동내역 조회
+│   └── student_changelog_fetcher.py # 학적변동내역 조회
 │
 ├── results.py               # MjuUnivAuthResult - 통합 결과 객체
 ├── exceptions.py            # 커스텀 예외 클래스들
 ├── config.py                # 서비스 URL, 타임아웃 설정
 │
 ├── domain/                  # 순수 데이터 모델
+│   ├── student_basicinfo.py   # StudentBasicInfo 데이터 클래스
 │   ├── student_card.py      # StudentCard 데이터 클래스
 │   └── student_changelog.py # StudentChangeLog 데이터 클래스
 │
@@ -51,7 +53,7 @@ mju_univ_auth/
 라이브러리 사용자는 크게 두 부류로 나뉩니다:
 
 1. **서비스 개발자**: 로그인 실패, 네트워크 오류 등을 "정상적인 비즈니스 로직"으로 처리해야 함
-2. **스크립트 개발자**: 빠르게 작성하고, 오류는 예외로 터트려 즉시 확인하고 싶음
+2. **라이브러리 개발자**: 오류는 예외로 터트려 코드 흐름을 제어하고, 디버깅 시 스택 트레이스를 통해 문제를 추적하고자 함
 
 ```python
 # 서비스 개발자가 원하는 방식
@@ -130,6 +132,7 @@ class ErrorCode(str, Enum):
     SESSION_EXPIRED_ERROR = "SESSION_EXPIRED_ERROR"
     ALREADY_LOGGED_IN_ERROR = "ALREADY_LOGGED_IN_ERROR"
     SERVICE_NOT_FOUND_ERROR = "SERVICE_NOT_FOUND_ERROR"
+    SERVICE_UNKNOWN_ERROR = "SERVICE_UNKNOWN_ERROR"
     INVALID_SERVICE_USAGE_ERROR = "INVALID_SERVICE_USAGE_ERROR"
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
 ```
@@ -264,9 +267,6 @@ class BaseAuthenticator:
 class StandardAuthenticator(BaseAuthenticator):
     def _execute_login(self, session, service):
         """Internal - 실제 로직 구현, 예외 발생"""
-        if self.is_session_valid(service):
-            raise AlreadyLoggedInError(...)
-            
         self._fetch_login_page(...)      # 1. 페이지 접속
         encrypted = self._prepare_encrypted_data()  # 2. 암호화
         response = self._submit_login(...)  # 3. 로그인 요청
@@ -323,27 +323,26 @@ class BaseFetcher(Generic[T]):
 ```python
 from pydantic import BaseModel, Field
 
+# 실제 도메인 모델은 더 상세하며, 아래는 핵심 구조를 보여주는 예시입니다.
+# (mju_univ_auth/domain/student_card.py 참고)
+
+class StudentProfile(BaseModel):
+    """학생 프로필 정보"""
+    student_id: str = ""
+    name_korean: str = ""
+    # ... 기타 프로필 필드
+
+class PersonalContact(BaseModel):
+    """개인 연락처 정보"""
+    email: str = ""
+    mobile_number: str = ""
+    # ... 기타 연락처 필드
+
 class StudentCard(BaseModel):
-    student_id: str = Field(default="", description="학번")
-    name_korean: str = Field(default="", description="한글 이름")
-    # ... 필드들
-    
-    @property
-    def name_english(self) -> str:
-        """계산된 속성"""
-        return f"{self.name_english_first} {self.name_english_last}"
-    
-    def to_dict(self) -> dict:
-        """직렬화 지원"""
-        return self.model_dump()
-    
-    @classmethod
-    def from_parsed_fields(cls, fields: dict) -> 'StudentCard':
-        """팩토리 메서드"""
-        return cls(
-            student_id=fields.get('학번', ''),
-            ...
-        )
+    """학생카드 정보 데이터 클래스"""
+    student_profile: StudentProfile = Field(default_factory=StudentProfile)
+    personal_contact: PersonalContact = Field(default_factory=PersonalContact)
+    raw_html_data: str = "" # 원본 HTML 데이터 저장
 ```
 
 ### 4.5. Infrastructure Layer
