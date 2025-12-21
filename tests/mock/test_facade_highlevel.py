@@ -17,7 +17,7 @@ from mju_univ_auth.fetcher.student_changelog_fetcher import StudentChangeLogFetc
 def test_get_student_card_success(monkeypatch):
     """Tests successful student card fetching."""
     auth = MjuUnivAuth(user_id='user', user_pw='pw')
-    auth._session = MagicMock()
+    auth._login_result = MjuUnivAuthResult(request_succeeded=True, credentials_valid=True, data=MagicMock())
     auth._service = 'msi'
 
     # Mock the fetcher's fetch method
@@ -36,8 +36,7 @@ def test_get_student_card_success(monkeypatch):
 def test_get_student_card_with_no_login_attempt():
     """Tests calling get_student_card without a session."""
     auth = MjuUnivAuth(user_id='user2', user_pw='pw2')
-    auth._session = None
-    auth._login_failed = False
+    auth._login_result = None
 
     result = auth.get_student_card()
 
@@ -49,8 +48,7 @@ def test_get_student_card_with_no_login_attempt():
 def test_get_data_after_failed_login():
     """Tests calling a fetcher after a failed login."""
     auth = MjuUnivAuth(user_id='user3', user_pw='pw3')
-    auth._login_failed = True
-    auth._login_error = MjuUnivAuthResult(request_succeeded=True, credentials_valid=False, error_code=ErrorCode.INVALID_CREDENTIALS_ERROR)
+    auth._login_result = MjuUnivAuthResult(request_succeeded=True, credentials_valid=False, error_code=ErrorCode.INVALID_CREDENTIALS_ERROR)
 
     result = auth.get_student_card()
     
@@ -61,7 +59,7 @@ def test_get_data_after_failed_login():
 def test_get_student_changelog_success(monkeypatch):
     """Tests successful student changelog fetching."""
     auth = MjuUnivAuth(user_id='user', user_pw='pw')
-    auth._session = MagicMock()
+    auth._login_result = MjuUnivAuthResult(request_succeeded=True, credentials_valid=True, data=MagicMock())
     auth._service = 'msi'
 
     # Mock the fetcher's fetch method

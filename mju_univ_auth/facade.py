@@ -70,10 +70,8 @@ class MjuUnivAuth:
         self._user_pw = user_pw
         self._verbose = verbose
         
-        self._session: Optional[requests.Session] = None
         self._service: Optional[str] = None
-        self._login_failed: bool = False
-        self._login_error: Optional[MjuUnivAuthResult] = None
+        self._login_result: Optional[MjuUnivAuthResult] = None
 
     def login(self, service: str = 'msi') -> 'MjuUnivAuth':
         """
@@ -98,18 +96,13 @@ class MjuUnivAuth:
             user_pw=self._user_pw,
             verbose=self._verbose
         )
-        result = authenticator.login(service)
+        self._login_result = authenticator.login(service)
         
-        if result.success:
-            self._session = result.data
+        if self._login_result.success:
             self._service = service
-            return self
         else:
-            self._session = None
             self._service = None
-            self._login_failed = True
-            self._login_error = result
-            return self
+        return self
 
     def is_logged_in(self, service: str = 'msi') -> bool:
         """
@@ -118,12 +111,12 @@ class MjuUnivAuth:
         평균 응답 시간은 약 300ms 내외입니다.
         
         Args:
-            service: 유효성을 확인할 서비스. 로그인 시 사용한 서비스와 달라도 무방합니다.
+            service: 유효성을 확인할 서비스.
         
         Returns:
             bool: 세션 유효 여부
         """
-        if self._login_failed or self._session is None:
+        if self._login_result is None or not self._login_result.success:
             return False
         
         # 요청받은 대로 Authenticator를 생성하여 세션 유효성 검사
@@ -132,7 +125,7 @@ class MjuUnivAuth:
             user_pw=self._user_pw,
             verbose=self._verbose
         )
-        authenticator._session = self._session  # 세션 설정
+        authenticator._session = self._login_result.data  # 세션 설정
         return authenticator.is_session_valid(service)
 
     @property
@@ -141,7 +134,7 @@ class MjuUnivAuth:
         현재 로그인된 `requests.Session` 객체를 반환합니다.
         로그인되지 않은 경우 `None`을 반환합니다.
         """
-        return self._session
+        return self._login_result.data if self._login_result and self._login_result.success else None
 
     @property
     def service(self) -> Optional[str]:
@@ -158,20 +151,13 @@ class MjuUnivAuth:
         Returns:
             MjuUnivAuthResult[requests.Session]: 세션 객체
         """
-        if self._login_failed:
-            return MjuUnivAuthResult(
-                request_succeeded=self._login_error.request_succeeded,
-                credentials_valid=self._login_error.credentials_valid,
-                error_code=self._login_error.error_code,
-                error_message=self._login_error.error_message
-            )
-        if self._session is None:
+        if self._login_result is None:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
                 error_message="세션이 없습니다."
             )
-        return MjuUnivAuthResult(request_succeeded=True, data=self._session)
+        return self._login_result
 
     # =================================================================
     # 데이터 조회 메서드 (고수준 API)
@@ -188,25 +174,25 @@ class MjuUnivAuth:
         if self._verbose:
             logger.info("===== mju-univ-auth: 학생 기본 정보 조회 =====")
         
-        if self._login_failed:
-            return self._login_error
-        
-        if self._session is None:
+        if self._login_result is None:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
                 error_message="세션이 없습니다."
             )
         
+        if not self._login_result.success:
+            return self._login_result
+        
         if self._service != 'msi':
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 error_code=ErrorCode.INVALID_SERVICE_USAGE_ERROR,
-                error_message="MSI 서비스로 로그인된 세션이 아닙니다."
+                error_message="MSI 서비스로 로그인된 세션이 아닙니다. 학생 기본 정보는 MSI 서비스 로그인이 필요합니다."
             )
 
         fetcher = StudentBasicInfoFetcher(
-            session=self._session,
+            session=self._login_result.data,
             verbose=self._verbose,
         )
         return fetcher.fetch()
@@ -223,25 +209,25 @@ class MjuUnivAuth:
         if self._verbose:
             logger.info("===== mju-univ-auth: 학생카드 조회 =====")
         
-        if self._login_failed:
-            return self._login_error
-        
-        if self._session is None:
+        if self._login_result is None:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
                 error_message="세션이 없습니다."
             )
         
+        if not self._login_result.success:
+            return self._login_result
+        
         if self._service != 'msi':
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 error_code=ErrorCode.INVALID_SERVICE_USAGE_ERROR,
-                error_message="MSI 서비스로 로그인된 세션이 아닙니다. 학생카드는 MSI 서비스 로그인이 필요합니다."
+                error_message="MSI 서비스로 로그인된 세션이 아닙니다. 학생카드 정보는 MSI 서비스 로그인이 필요합니다."
             )
 
         fetcher = StudentCardFetcher(
-            session=self._session,
+            session=self._login_result.data,
             user_pw=self._user_pw,
             verbose=self._verbose,
         )
@@ -259,25 +245,25 @@ class MjuUnivAuth:
         if self._verbose:
             logger.info("===== mju-univ-auth: 학적변동내역 조회 =====")
     
-        if self._login_failed:
-            return self._login_error
-    
-        if self._session is None:
+        if self._login_result is None:
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 error_code=ErrorCode.SESSION_NOT_EXIST_ERROR,
                 error_message="세션이 없습니다."
             )
     
+        if not self._login_result.success:
+            return self._login_result
+    
         if self._service != 'msi':
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 error_code=ErrorCode.INVALID_SERVICE_USAGE_ERROR,
-                error_message="MSI 서비스로 로그인된 세션이 아닙니다. 학적변동내역은 MSI 서비스 로그인이 필요합니다."
+                error_message="MSI 서비스로 로그인된 세션이 아닙니다. 학적변동내역 정보는 MSI 서비스 로그인이 필요합니다."
             )
     
         fetcher = StudentChangeLogFetcher(
-            session=self._session,
+            session=self._login_result.data,
             verbose=self._verbose,
         )
         return fetcher.fetch()

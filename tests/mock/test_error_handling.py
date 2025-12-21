@@ -34,10 +34,9 @@ def test_login_service_not_found(auth_instance, monkeypatch):
     # login 메서드는 self를 반환하므로, 내부 상태를 확인합니다.
     auth_instance.login('invalid_service')
     
-    assert auth_instance._login_failed is True
-    assert auth_instance._login_error is not None
-    assert auth_instance._login_error.error_code == ErrorCode.SERVICE_NOT_FOUND_ERROR
-    assert "알 수 없는 서비스" in auth_instance._login_error.error_message
+    assert not auth_instance._login_result.success
+    assert auth_instance._login_result.error_code == ErrorCode.SERVICE_NOT_FOUND_ERROR
+    assert "알 수 없는 서비스" in auth_instance._login_result.error_message
 
 
 def test_get_data_with_invalid_service_usage(auth_instance):
@@ -47,9 +46,8 @@ def test_get_data_with_invalid_service_usage(auth_instance):
     Then: 결과는 SERVICE_UNKNOWN_ERROR 에러를 포함해야 합니다.
     """
     # 'lms' 서비스로 성공적으로 로그인했다고 가정합니다.
-    auth_instance._session = MagicMock()
+    auth_instance._login_result = MjuUnivAuthResult(request_succeeded=True, credentials_valid=True, data=MagicMock())
     auth_instance._service = 'lms'
-    auth_instance._login_failed = False
 
     result = auth_instance.get_student_card()
 
@@ -84,8 +82,7 @@ def test_login_failure_propagates_to_get_data(auth_instance):
         error_code=ErrorCode.INVALID_CREDENTIALS_ERROR,
         error_message="아이디/비번 틀림"
     )
-    auth_instance._login_failed = True
-    auth_instance._login_error = login_error_result
+    auth_instance._login_result = login_error_result
 
     result = auth_instance.get_student_card()
 
@@ -118,10 +115,9 @@ def test_login_catches_various_errors(auth_instance, monkeypatch, error_code, er
 
     auth_instance.login('msi')
 
-    assert auth_instance._login_failed is True
-    assert auth_instance._login_error is not None
-    assert auth_instance._login_error.error_code == error_code
-    assert auth_instance._login_error.error_message == error_message
+    assert not auth_instance._login_result.success
+    assert auth_instance._login_result.error_code == error_code
+    assert auth_instance._login_result.error_message == error_message
 
 
 def test_fetcher_catches_session_expired(auth_instance):
@@ -131,9 +127,8 @@ def test_fetcher_catches_session_expired(auth_instance):
     Then: Facade는 SESSION_EXPIRED_ERROR 에러 결과를 반환해야 합니다.
     """
     # 성공적인 로그인을 가정합니다.
-    auth_instance._session = MagicMock()
+    auth_instance._login_result = MjuUnivAuthResult(request_succeeded=True, credentials_valid=True, data=MagicMock())
     auth_instance._service = 'msi'
-    auth_instance._login_failed = False
 
     # Fetcher의 fetch 메서드가 세션 만료 결과를 반환하도록 모의합니다.
     mock_result = MjuUnivAuthResult(
