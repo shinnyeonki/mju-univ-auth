@@ -54,6 +54,7 @@ python -m mju_univ_auth
 
 | 서비스 | 코드명 | 설명 | 동작 여부 | 관련 클래스 |
 |--------|--------|------|--------|--------|
+| [명지대 메인 홈페이지](https://www.mju.ac.kr/mjukr/index.do) | `"www"` | 명지대 공식 홈페이지 | v | `StandardAuthenticator` |
 | [명지대 통합 포털](https://portal.mju.ac.kr/) | `"main"` | 기본 포털 | v | `StandardAuthenticator` |
 | [학사행정시스템 (MSI)](https://msi.mju.ac.kr/) | `"msi"` | 학생카드, 성적, 수강신청 등 | v | `StandardAuthenticator` |
 | [LMS (LearnUs)](https://lms.mju.ac.kr/) | `"lms"` | 강의 자료, 과제 | v | `StandardAuthenticator` |
