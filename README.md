@@ -21,6 +21,7 @@
 8. [동시성 사용 팁](doc/concurrent_usage.md)
 9. [기술적 설명](#9-기술적-설명)
 10. [이종 언어를 위한 API 서버](#10-이종-언어를-위한-api-서버)
+11. [기여 가이드](#11-기여-가이드)
 
 ---
 
@@ -368,6 +369,11 @@ Python이 아닌 다른 언어에서 이 라이브러리의 기능을 사용하�
 [API 서버 대화형 문서](https://mju-univ-auth.shinnk.kro.kr/docs)
 
 [API 서버 명세](https://mju-univ-auth.shinnk.kro.kr/redoc)
+
+---
+
+## 11. 기여 가이드
+[기여 가이드](doc/contributing.md)
 
 ---
 
