@@ -9,8 +9,6 @@
 
 **GitHub Repository:** [github repo](https://github.com/shinnyeonki/mju-univ-auth)
 
-**API Documentation:** [Interactive Docs](https://mju-univ-auth.shinnk.kro.kr/docs) | [ReDoc](https://mju-univ-auth.shinnk.kro.kr/redoc)
-
 ## 목차
 
 1. [목적](#1-목적)
@@ -32,9 +30,10 @@
 
 ### 주요 기능
 
-- **명지대 서비스의 세션 얻기**: 명지대학교 통합 로그인 시스템을 통한 인증 및 세션 획득
-- **학생카드 조회**: 학번, 이름, 학과, 학적상태 등 기본 정보 조회
-- **학적변동내역 조회**: 학적 변동 이력 조회
+- **명지대 서비스들의 세션 얻기**: 명지대학교 통합 로그인 시스템을 통한 인증 및 세션 획득
+- **MSI 서비스 기본 정보 조회**: 기본 정보 조회
+- **MSI 서비스 학적변동내역 조회**: 학적 변동 이력 조회
+- **MSI 서비스 학생카드 조회**: 학번, 이름, 학과, 학적상태 조회
 
 ---
 
@@ -136,9 +135,9 @@ if result.success:
 
 ```python
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO) # INFO or DEBUG
 
-auth = MjuUnivAuth("학번", "비밀번호", verbose=True)
+auth = MjuUnivAuth("학번", "비밀번호", verbose=True) # 라이브러리 로그 활성화
 result = auth.login("msi").get_student_card()
 ```
 

@@ -62,6 +62,8 @@ class BaseAuthenticator:
             )
 
         except InvalidCredentialsError as e:
+            self._session = None
+            self._service = None
             return MjuUnivAuthResult(
                 request_succeeded=True,
                 credentials_valid=False,
@@ -69,6 +71,8 @@ class BaseAuthenticator:
                 error_message=str(e)
             )
         except NetworkError as e:
+            self._session = None
+            self._service = None
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=False,
@@ -76,6 +80,8 @@ class BaseAuthenticator:
                 error_message=str(e)
             )
         except ServiceNotFoundError as e:
+            self._session = None
+            self._service = None
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=False,
@@ -83,6 +89,8 @@ class BaseAuthenticator:
                 error_message=str(e)
             )
         except ParsingError as e:
+            self._session = None
+            self._service = None
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=True,
@@ -90,6 +98,8 @@ class BaseAuthenticator:
                 error_message=str(e)
             )
         except SessionExpiredError as e:
+            self._session = None
+            self._service = None
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=True,
@@ -97,6 +107,8 @@ class BaseAuthenticator:
                 error_message=str(e)
             )
         except AlreadyLoggedInError as e:
+            self._session = None
+            self._service = None
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=True,
@@ -104,6 +116,8 @@ class BaseAuthenticator:
                 error_message=str(e)
             )
         except InvalidServiceUsageError as e:
+            self._session = None
+            self._service = None
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=False,
@@ -111,6 +125,8 @@ class BaseAuthenticator:
                 error_message=str(e)
             )
         except Exception as e:
+            self._session = None
+            self._service = None
             return MjuUnivAuthResult(
                 request_succeeded=False,
                 credentials_valid=False,
