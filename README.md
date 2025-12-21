@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/pypi/pyversions/mju-univ-auth.svg)](https://pypi.org/project/mju-univ-auth/)
 
 
-<p align="center"><img src="myongji_universiry_auth_logo.png" alt="alt text" width="800"></p>
+<p align="center"><img src="myongji_universiry_auth_logo.png" alt="alt text" width="400"></p>
 
 **GitHub Repository:** [github repo](https://github.com/shinnyeonki/mju-univ-auth)
 
