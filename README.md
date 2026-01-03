@@ -5,9 +5,14 @@
 [![PyPI version](https://badge.fury.io/py/mju-univ-auth.svg)](https://pypi.org/project/mju-univ-auth/)
 [![Python](https://img.shields.io/pypi/pyversions/mju-univ-auth.svg)](https://pypi.org/project/mju-univ-auth/)
 
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/mju-univ-auth?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/mju-univ-auth)
+[![codecov](https://img.shields.io/codecov/c/github/shinnyeonki/mju-univ-auth?label=codecov&logo=codecov)](https://codecov.io/gh/shinnyeonki/mju-univ-auth)
+[![Docs](https://img.shields.io/badge/docs-latest-blue)](https://mju-univ-auth.shinnk.mmv.kr/docs)
+[![GitHub issues](https://img.shields.io/github/issues/shinnyeonki/mju-univ-auth)](https://github.com/shinnyeonki/mju-univ-auth/issues)
+[![GitHub stars](https://img.shields.io/github/stars/shinnyeonki/mju-univ-auth?style=social)](https://github.com/shinnyeonki/mju-univ-auth)
+
 <img src="myongji_universiry_auth_logo.png" alt="alt text" width="500">
 
-**GitHub Repository:** [github repo](https://github.com/shinnyeonki/mju-univ-auth)
 
 ## 목차
 

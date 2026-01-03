@@ -465,6 +465,14 @@ async def api_middleware(request: Request, call_next) -> JSONResponse:
 
 # 5. --- API 엔드포인트 ---
 
+error_responses = {
+    401: {"model": ErrorResponse, "description": "INVALID_CREDENTIALS_ERROR 인증 실패 (자격 증명 오류, 세션 만료 등)"},
+    409: {"model": ErrorResponse, "description": "로그인 상태에서 재 로그인등 서버 상태와 충돌 요청"},
+    422: {"model": ErrorResponse, "description": "SERVICE_NOT_FOUND_ERROR, 처리 불가능한 요청 (잘못된 서비스 이름) 내부 로직 문제"},
+    500: {"model": ErrorResponse, "description": "PARSING_ERROR, UNKNOWN_ERROR 서버 내부 오류 (파싱 실패 등)"},
+    502: {"model": ErrorResponse, "description": "NETWORK_ERROR 게이트웨이 오류 (업스트림 네트워크 문제)"},
+}
+
 @app.get("/", summary="API 상태 확인", include_in_schema=True)
 async def root():
     return {
@@ -478,19 +486,13 @@ async def root():
     "/api/v1/student-basicinfo",
     summary="학생 기본 정보 조회",
     response_model=SuccessResponse[StudentBasicInfo],
-    responses={
-        401: {"model": ErrorResponse, "description": "INVALID_CREDENTIALS_ERROR 인증 실패 (자격 증명 오류, 세션 만료 등)"},
-        409: {"model": ErrorResponse, "description": "로그인 상태에서 재 로그인등 서버 상태와 충돌 요청"},
-        422: {"model": ErrorResponse, "description": "SERVICE_NOT_FOUND_ERROR, 처리 불가능한 요청 (잘못된 서비스 이름) 내부 로직 문제"},
-        500: {"model": ErrorResponse, "description": "PARSING_ERROR, UNKNOWN_ERROR 서버 내부 오류 (파싱 실패 등)"},
-        502: {"model": ErrorResponse, "description": "NETWORK_ERROR 게이트웨이 오류 (업스트림 네트워크 문제)"},
-    }
+    responses=error_responses
 )
 async def get_student_basicinfo(req: AuthRequest):
     """
     사용자 인증 후 학적변동내역을 조회합니다.
     - **user_id**: 학번
-    - **user_pw**: myiweb 비밀번호
+    - **user_pw**: 비밀번호
     """
     data = auth_service.get_student_basicinfo(req.user_id, req.user_pw)
     return {"data": data}
@@ -500,19 +502,13 @@ async def get_student_basicinfo(req: AuthRequest):
     "/api/v1/student-changelog",
     summary="학적변동내역 조회",
     response_model=SuccessResponse[StudentChangeLog],
-    responses={
-        401: {"model": ErrorResponse, "description": "INVALID_CREDENTIALS_ERROR 인증 실패 (자격 증명 오류, 세션 만료 등)"},
-        409: {"model": ErrorResponse, "description": "로그인 상태에서 재 로그인등 서버 상태와 충돌 요청"},
-        422: {"model": ErrorResponse, "description": "SERVICE_NOT_FOUND_ERROR, 처리 불가능한 요청 (잘못된 서비스 이름) 내부 로직 문제"},
-        500: {"model": ErrorResponse, "description": "PARSING_ERROR, UNKNOWN_ERROR 서버 내부 오류 (파싱 실패 등)"},
-        502: {"model": ErrorResponse, "description": "NETWORK_ERROR 게이트웨이 오류 (업스트림 네트워크 문제)"},
-    }
+    responses=error_responses
 )
 async def get_student_changelog(req: AuthRequest):
     """
     사용자 인증 후 학적변동내역을 조회합니다.
     - **user_id**: 학번
-    - **user_pw**: myiweb 비밀번호
+    - **user_pw**: 비밀번호
     """
     data = auth_service.get_student_changelog(req.user_id, req.user_pw)
     return {"data": data}
@@ -521,19 +517,13 @@ async def get_student_changelog(req: AuthRequest):
     "/api/v1/student-card",
     summary="학생증 정보 조회",
     response_model=SuccessResponse[StudentCard],
-    responses={
-        401: {"model": ErrorResponse, "description": "INVALID_CREDENTIALS_ERROR 인증 실패 (자격 증명 오류, 세션 만료 등)"},
-        409: {"model": ErrorResponse, "description": "로그인 상태에서 재 로그인등 서버 상태와 충돌 요청"},
-        422: {"model": ErrorResponse, "description": "SERVICE_NOT_FOUND_ERROR, 처리 불가능한 요청 (잘못된 서비스 이름) 내부 로직 문제"},
-        500: {"model": ErrorResponse, "description": "PARSING_ERROR, UNKNOWN_ERROR 서버 내부 오류 (파싱 실패 등)"},
-        502: {"model": ErrorResponse, "description": "NETWORK_ERROR 게이트웨이 오류 (업스트림 네트워크 문제)"},
-    }
+    responses=error_responses
 )
 async def get_student_card(req: AuthRequest):
     """
     사용자 인증 후 학생증 정보를 조회합니다.
     - **user_id**: 학번
-    - **user_pw**: myiweb 비밀번호
+    - **user_pw**: 비밀번호
     """
     data = auth_service.get_student_card(req.user_id, req.user_pw)
     return {"data": data}
