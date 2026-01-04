@@ -4,17 +4,19 @@ import concurrent.futures
 import random
 
 # 서버 주소
-URL = "http://localhost:8001/api/v1/student-basicinfo"
+# URL = "http://localhost:8001/api/v1/student-basicinfo"
+URL = "https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-basicinfo"
+
 
 # 테스트 설정
-CONCURRENT_USERS = 400  # 동시에 요청할 사용자 수
+CONCURRENT_USERS = 20  # 동시에 요청할 사용자 수
 USER_PREFIX = "TEST_"
 
 def send_request(idx):
     user_id = f"{USER_PREFIX}{idx}"
     payload = {
         "user_id": user_id,
-        "user_pw": "password" # Mock 모드라 패스워드는 상관없음
+        "user_pw": "password" # Mock 유저라 패스워드는 상관없음
     }
     
     start = time.time()
@@ -71,6 +73,6 @@ def main():
     else:
         print("\n❌ Concurrency Check FAILED: Requests seem to be processed sequentially.")
         print("Tip: Check if your FastAPI endpoints are defined as 'def' instead of 'async def' when using blocking code.")
-
+    print("server url : " + URL)
 if __name__ == "__main__":
     main()

@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from loguru import logger
 from requests import Session
@@ -599,7 +600,7 @@ error_responses = {
 }
 
 @app.get("/", summary="API 상태 확인", include_in_schema=True)
-def root():
+async def root():
     return {
         "name": "MJU Univ Auth API",
         "version": MJU_AUTH_VERSION,
@@ -613,13 +614,13 @@ def root():
     response_model=SuccessResponse[StudentBasicInfo],
     responses=error_responses
 )
-def get_student_basicinfo(req: AuthRequest):
+async def get_student_basicinfo(req: AuthRequest):
     """
     사용자 인증 후 학적변동내역을 조회합니다.
     - **user_id**: 학번
     - **user_pw**: 비밀번호
     """
-    data = auth_service.get_student_basicinfo(req.user_id, req.user_pw)
+    data = await run_in_threadpool(auth_service.get_student_basicinfo, req.user_id, req.user_pw)
     return {"data": data}
 
 
@@ -629,13 +630,13 @@ def get_student_basicinfo(req: AuthRequest):
     response_model=SuccessResponse[StudentChangeLog],
     responses=error_responses
 )
-def get_student_changelog(req: AuthRequest):
+async def get_student_changelog(req: AuthRequest):
     """
     사용자 인증 후 학적변동내역을 조회합니다.
     - **user_id**: 학번
     - **user_pw**: 비밀번호
     """
-    data = auth_service.get_student_changelog(req.user_id, req.user_pw)
+    data = await run_in_threadpool(auth_service.get_student_changelog, req.user_id, req.user_pw)
     return {"data": data}
 
 @app.post(
@@ -644,13 +645,13 @@ def get_student_changelog(req: AuthRequest):
     response_model=SuccessResponse[StudentCard],
     responses=error_responses
 )
-def get_student_card(req: AuthRequest):
+async def get_student_card(req: AuthRequest):
     """
     사용자 인증 후 학생증 정보를 조회합니다.
     - **user_id**: 학번
     - **user_pw**: 비밀번호
     """
-    data = auth_service.get_student_card(req.user_id, req.user_pw)
+    data = await run_in_threadpool(auth_service.get_student_card, req.user_id, req.user_pw)
     return {"data": data}
 
 
