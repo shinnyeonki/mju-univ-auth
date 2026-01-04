@@ -7,10 +7,13 @@ import time
 import uuid
 import hashlib
 import threading
+import random
+import anyio
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, Tuple, TypeVar, Generic
 from importlib.metadata import version
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -46,9 +49,11 @@ from mju_univ_auth import (
 )
 
 # 1. --- 로깅 설정 ---
+# 1. --- 로깅 설정 ---
 LOG_DIR = Path(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
+# 1) 포맷 문자열은 그대로 둡니다.
 LOG_FORMAT = (
     "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
     "{level: <8} | "
@@ -61,6 +66,26 @@ LOG_FORMAT = (
     "{extra[elapsed]: >7.4f}s | "
     "{message}"
 )
+
+# 2) Patcher 함수 정의
+# 로그가 기록되기 전에 'extra' 딕셔너리에 키가 없으면 기본값을 채워줍니다.
+def log_patcher(record):
+    defaults = {
+        "ip": "-",
+        "student_id": "-",
+        "request_id": "-",
+        "method": "-",
+        "path": "-",
+        "status": "-",
+        "elapsed": 0.0,
+    }
+    for key, value in defaults.items():
+        if key not in record["extra"]:
+            record["extra"][key] = value
+
+# 3) Logger 설정 적용
+logger.configure(patcher=log_patcher)
+
 logger.add(
     str(LOG_DIR / "mju_api_{time:YYYY-MM-DD}.log"),
     rotation="1 day",
@@ -69,18 +94,37 @@ logger.add(
     format=LOG_FORMAT,
 )
 
-
 # 2. --- FastAPI 앱 및 Pydantic 모델 ---
 try:
     MJU_AUTH_VERSION = version('mju_univ_auth')
 except Exception:
     MJU_AUTH_VERSION = "unknown"
 
+# Lifespan 정의: 서버 시작/종료 시 실행될 로직
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- [Startup: 서버 시작 시 실행] ---
+    # AnyIO(FastAPI 비동기 엔진)의 기본 스레드 풀 제한을 가져옵니다.
+    limiter = anyio.to_thread.current_default_thread_limiter()
+    
+    # 기본값 40 -> 200으로 변경 (동시 처리 향상 목적)
+    limiter.total_tokens = 200
+    
+    logger.info(f"✅ Thread pool limit increased to: {limiter.total_tokens}")
+    
+    yield  # 이 시점에서 서버가 실행됩니다 (요청 처리)
+    
+    # --- [Shutdown: 서버 종료 시 실행] ---
+    logger.info("⛔ Server shutting down...")
+
+
 app = FastAPI(
     title="MJU Univ Auth API",
     description="명지대학교 학생 인증 및 정보 조회 API.",
     version=MJU_AUTH_VERSION,
+    lifespan=lifespan,
 )
+
 
 class AuthRequest(BaseModel):
     user_id: str
@@ -103,6 +147,55 @@ class ErrorResponse(BaseModel):
     error_code: str
     error_message: str
     success: bool = False
+    
+# MockProvider
+class MockProvider:
+    """테스트용 가짜 데이터 생성 및 지연 시뮬레이션"""
+    
+    @staticmethod
+    def simulate_delay():
+        """1.0 ~ 2.0초 랜덤 지연 (동기 Blocking)"""
+        delay = random.uniform(1.0, 2.0)
+        time.sleep(delay)
+
+    @staticmethod
+    def get_basic_info(user_id: str) -> StudentBasicInfo:
+        MockProvider.simulate_delay()
+        # 실제 라이브러리의 Pydantic 모델에 맞는 필드를 채워주세요.
+        # 예시 필드명입니다. 라이브러리 정의와 다를 경우 수정이 필요할 수 있습니다.
+        return StudentBasicInfo(
+            student_id=user_id,
+            name=f"테스트_{user_id}",
+            college="ICT융합대학",
+            department="응용소프트웨어전공",
+            major="응용소프트웨어",
+            state="재학",
+            grade="4",
+            entrance_date="2020-03-02"
+            # 필요한 다른 필드들이 있다면 여기에 기본값을 추가하세요
+        )
+
+    @staticmethod
+    def get_changelog(user_id: str) -> StudentChangeLog:
+        MockProvider.simulate_delay()
+        return StudentChangeLog(
+            student_id=user_id,
+            count=1,
+            logs=[
+                {"date": "2020-03-02", "type": "입학", "desc": "신입학"},
+                {"date": "2024-03-02", "type": "성적", "desc": "성적우수"}
+            ]
+        )
+
+    @staticmethod
+    def get_card(user_id: str) -> StudentCard:
+        MockProvider.simulate_delay()
+        return StudentCard(
+            student_id=user_id,
+            name=f"테스트_{user_id}",
+            department="컴퓨터공학과",
+            barcode=f"20241234{user_id}"
+        )
 
 
 # 3. --- 핵심 로직 클래스 ---
@@ -313,7 +406,29 @@ class MjuAuthService:
         except MjuUnivAuthError as e:
             raise e
     
+    # Helper method
+    def _is_test_user(self, user_id: str) -> bool:
+        return user_id.startswith("TEST_")
+    
+    def _log_test_mode(self, user_id: str, message: str):
+        """테스트 모드 전용 로그 (빈 extra 필드를 채워서 에러 방지)"""
+        # LOG_FORMAT이 요구하는 모든 키를 더미 값으로 채워줍니다.
+        test_logger = logger.bind(
+            ip="TEST_IP",
+            student_id=user_id,
+            request_id="TEST_REQ",
+            method="MOCK",
+            path="Internal",
+            status=200,
+            elapsed=0.0
+        )
+        test_logger.info(message)
+    
     def get_student_basicinfo(self, user_id: str, user_pw: str) -> StudentBasicInfo:
+        # [Test Hook]
+        if self._is_test_user(user_id):
+            return MockProvider.get_basic_info(user_id)
+        
         """학적기본정보를 조회하고 결과를 캐싱합니다."""
         password_hash = PasswordManager.hash_password(user_pw)
         data_type = "student-basicinfo"
@@ -330,6 +445,11 @@ class MjuAuthService:
             return data
 
     def get_student_changelog(self, user_id: str, user_pw: str) -> StudentChangeLog:
+        # [Test Hook]
+        if self._is_test_user(user_id):
+            return MockProvider.get_basic_info(user_id)
+        
+        
         """학적변동내역을 조회하고 결과를 캐싱합니다."""
         password_hash = PasswordManager.hash_password(user_pw)
         data_type = "student-changelog"
@@ -346,6 +466,11 @@ class MjuAuthService:
             return data
 
     def get_student_card(self, user_id: str, user_pw: str) -> StudentCard:
+        # [Test Hook]
+        if self._is_test_user(user_id):
+            return MockProvider.get_basic_info(user_id)
+        
+        
         """학생증 정보를 조회하고 결과를 캐싱합니다."""
         password_hash = PasswordManager.hash_password(user_pw)
         data_type = "student-card"
@@ -474,7 +599,7 @@ error_responses = {
 }
 
 @app.get("/", summary="API 상태 확인", include_in_schema=True)
-async def root():
+def root():
     return {
         "name": "MJU Univ Auth API",
         "version": MJU_AUTH_VERSION,
@@ -488,7 +613,7 @@ async def root():
     response_model=SuccessResponse[StudentBasicInfo],
     responses=error_responses
 )
-async def get_student_basicinfo(req: AuthRequest):
+def get_student_basicinfo(req: AuthRequest):
     """
     사용자 인증 후 학적변동내역을 조회합니다.
     - **user_id**: 학번
@@ -504,7 +629,7 @@ async def get_student_basicinfo(req: AuthRequest):
     response_model=SuccessResponse[StudentChangeLog],
     responses=error_responses
 )
-async def get_student_changelog(req: AuthRequest):
+def get_student_changelog(req: AuthRequest):
     """
     사용자 인증 후 학적변동내역을 조회합니다.
     - **user_id**: 학번
@@ -519,7 +644,7 @@ async def get_student_changelog(req: AuthRequest):
     response_model=SuccessResponse[StudentCard],
     responses=error_responses
 )
-async def get_student_card(req: AuthRequest):
+def get_student_card(req: AuthRequest):
     """
     사용자 인증 후 학생증 정보를 조회합니다.
     - **user_id**: 학번
