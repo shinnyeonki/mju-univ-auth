@@ -17,7 +17,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from loguru import logger
 from requests import Session
@@ -152,7 +151,7 @@ class ErrorResponse(BaseModel):
 # MockProvider
 class MockProvider:
     """테스트용 가짜 데이터 생성 및 지연 시뮬레이션"""
-    
+
     @staticmethod
     def simulate_delay():
         """1.0 ~ 2.0초 랜덤 지연 (동기 Blocking)"""
@@ -162,40 +161,88 @@ class MockProvider:
     @staticmethod
     def get_basic_info(user_id: str) -> StudentBasicInfo:
         MockProvider.simulate_delay()
-        # 실제 라이브러리의 Pydantic 모델에 맞는 필드를 채워주세요.
-        # 예시 필드명입니다. 라이브러리 정의와 다를 경우 수정이 필요할 수 있습니다.
+        
+        # OpenAPI Spec: StudentBasicInfo
+        # properties: department, category, grade, last_access_time, last_access_ip, raw_html_data
         return StudentBasicInfo(
-            student_id=user_id,
-            name=f"테스트_{user_id}",
-            college="ICT융합대학",
-            department="응용소프트웨어전공",
-            major="응용소프트웨어",
-            state="재학",
-            grade="4",
-            entrance_date="2020-03-02"
-            # 필요한 다른 필드들이 있다면 여기에 기본값을 추가하세요
+            department="ICT융합대학 응용소프트웨어전공",
+            category="본교",
+            grade="4학년",
+            last_access_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            last_access_ip="127.0.0.1",
+            raw_html_data="<div>[MOCK DATA] Basic Info HTML</div>"
         )
 
     @staticmethod
     def get_changelog(user_id: str) -> StudentChangeLog:
         MockProvider.simulate_delay()
+
+        # OpenAPI Spec: StudentChangeLog
+        # properties: academic_status, cumulative_leave_semesters, change_log_list, raw_html_data
         return StudentChangeLog(
-            student_id=user_id,
-            count=1,
-            logs=[
-                {"date": "2020-03-02", "type": "입학", "desc": "신입학"},
-                {"date": "2024-03-02", "type": "성적", "desc": "성적우수"}
-            ]
+            academic_status={
+                "student_id": user_id,
+                "name": f"테스트_{user_id}",
+                "status": "재학",
+                "grade": "4",
+                "completed_semesters": "7",
+                "department": "응용소프트웨어전공"
+            },
+            cumulative_leave_semesters="0",
+            change_log_list=[
+                {
+                    "year": "2020",
+                    "semester": "1",
+                    "change_type": "입학",
+                    "change_date": "2020.03.02",
+                    "expiry_date": "",
+                    "reason": "신입학"
+                },
+                {
+                    "year": "2024",
+                    "semester": "1",
+                    "change_type": "복학",
+                    "change_date": "2024.03.02",
+                    "expiry_date": "",
+                    "reason": "일반복학"
+                }
+            ],
+            raw_html_data="<div>[MOCK DATA] Change Log HTML</div>"
         )
 
     @staticmethod
     def get_card(user_id: str) -> StudentCard:
         MockProvider.simulate_delay()
+
+        # OpenAPI Spec: StudentCard
+        # properties: student_profile, personal_contact, raw_html_data
         return StudentCard(
-            student_id=user_id,
-            name=f"테스트_{user_id}",
-            department="컴퓨터공학과",
-            barcode=f"20241234{user_id}"
+            student_profile={
+                "student_id": user_id,
+                "name_korean": f"테스트_{user_id}",
+                "grade": "4학년",
+                "enrollment_status": "재학",
+                "college_department": "ICT융합대학 응용소프트웨어전공",
+                "academic_advisor": "김교수",
+                "student_designed_major_advisor": "-",
+                "photo_base64": "" 
+            },
+            personal_contact={
+                "english_surname": "TEST",
+                "english_givenname": "USER",
+                "phone_number": "02-123-4567",
+                "mobile_number": "010-1234-5678",
+                "email": "test@mju.ac.kr",
+                "current_residence_address": {
+                    "postal_code": "12345",
+                    "address": "경기도 용인시 처인구 명지로 116"
+                },
+                "resident_registration_address": {
+                    "postal_code": "54321",
+                    "address": "서울 서대문구 거북골로 34"
+                }
+            },
+            raw_html_data="<div>[MOCK DATA] Student Card HTML</div>"
         )
 
 
@@ -600,7 +647,7 @@ error_responses = {
 }
 
 @app.get("/", summary="API 상태 확인", include_in_schema=True)
-async def root():
+def root():
     return {
         "name": "MJU Univ Auth API",
         "version": MJU_AUTH_VERSION,
@@ -614,13 +661,13 @@ async def root():
     response_model=SuccessResponse[StudentBasicInfo],
     responses=error_responses
 )
-async def get_student_basicinfo(req: AuthRequest):
+def get_student_basicinfo(req: AuthRequest):
     """
     사용자 인증 후 학적변동내역을 조회합니다.
     - **user_id**: 학번
     - **user_pw**: 비밀번호
     """
-    data = await run_in_threadpool(auth_service.get_student_basicinfo, req.user_id, req.user_pw)
+    data = auth_service.get_student_basicinfo(req.user_id, req.user_pw)
     return {"data": data}
 
 
@@ -630,13 +677,13 @@ async def get_student_basicinfo(req: AuthRequest):
     response_model=SuccessResponse[StudentChangeLog],
     responses=error_responses
 )
-async def get_student_changelog(req: AuthRequest):
+def get_student_changelog(req: AuthRequest):
     """
     사용자 인증 후 학적변동내역을 조회합니다.
     - **user_id**: 학번
     - **user_pw**: 비밀번호
     """
-    data = await run_in_threadpool(auth_service.get_student_changelog, req.user_id, req.user_pw)
+    data = auth_service.get_student_changelog(req.user_id, req.user_pw)
     return {"data": data}
 
 @app.post(
@@ -645,13 +692,13 @@ async def get_student_changelog(req: AuthRequest):
     response_model=SuccessResponse[StudentCard],
     responses=error_responses
 )
-async def get_student_card(req: AuthRequest):
+def get_student_card(req: AuthRequest):
     """
     사용자 인증 후 학생증 정보를 조회합니다.
     - **user_id**: 학번
     - **user_pw**: 비밀번호
     """
-    data = await run_in_threadpool(auth_service.get_student_card, req.user_id, req.user_pw)
+    data = auth_service.get_student_card(req.user_id, req.user_pw)
     return {"data": data}
 
 

@@ -9,7 +9,7 @@ URL = "https://mju-univ-auth.shinnk.mmv.kr/api/v1/student-basicinfo"
 
 
 # 테스트 설정
-CONCURRENT_USERS = 20  # 동시에 요청할 사용자 수
+CONCURRENT_USERS = 200  # 동시에 요청할 사용자 수
 USER_PREFIX = "TEST_"
 
 def send_request(idx):
