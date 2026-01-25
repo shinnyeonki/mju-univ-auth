@@ -159,7 +159,7 @@ class MockProvider:
         time.sleep(delay)
 
     @staticmethod
-    def get_basic_info(user_id: str) -> StudentBasicInfo:
+    def get_student_basicinfo(user_id: str) -> StudentBasicInfo:
         MockProvider.simulate_delay()
         
         # OpenAPI Spec: StudentBasicInfo
@@ -174,7 +174,7 @@ class MockProvider:
         )
 
     @staticmethod
-    def get_changelog(user_id: str) -> StudentChangeLog:
+    def get_student_changelog(user_id: str) -> StudentChangeLog:
         MockProvider.simulate_delay()
 
         # OpenAPI Spec: StudentChangeLog
@@ -211,7 +211,7 @@ class MockProvider:
         )
 
     @staticmethod
-    def get_card(user_id: str) -> StudentCard:
+    def get_student_card(user_id: str) -> StudentCard:
         MockProvider.simulate_delay()
 
         # OpenAPI Spec: StudentCard
@@ -475,7 +475,7 @@ class MjuAuthService:
     def get_student_basicinfo(self, user_id: str, user_pw: str) -> StudentBasicInfo:
         # [Test Hook]
         if self._is_test_user(user_id):
-            return MockProvider.get_basic_info(user_id)
+            return MockProvider.get_student_basicinfo(user_id)
         
         """학적기본정보를 조회하고 결과를 캐싱합니다."""
         password_hash = PasswordManager.hash_password(user_pw)
@@ -495,7 +495,7 @@ class MjuAuthService:
     def get_student_changelog(self, user_id: str, user_pw: str) -> StudentChangeLog:
         # [Test Hook]
         if self._is_test_user(user_id):
-            return MockProvider.get_basic_info(user_id)
+            return MockProvider.get_student_changelog(user_id)
         
         
         """학적변동내역을 조회하고 결과를 캐싱합니다."""
@@ -516,7 +516,7 @@ class MjuAuthService:
     def get_student_card(self, user_id: str, user_pw: str) -> StudentCard:
         # [Test Hook]
         if self._is_test_user(user_id):
-            return MockProvider.get_basic_info(user_id)
+            return MockProvider.get_student_card(user_id)
         
         
         """학생증 정보를 조회하고 결과를 캐싱합니다."""
